@@ -74,7 +74,7 @@ const farmaci = [
 ];
 
 const integratori = [
-  { name: "Vitamina E", dose: "38 gocce", freq: "1x / settimana", purpose: "Antiossidante" },
+  { name: "Vitamina D", dose: "38 gocce", freq: "1x / settimana", purpose: "Integrazione vitaminica" },
   { name: "Vitamina C + Zinco", dose: "1 g + 20 mg", freq: "Giornaliero", purpose: "Supporto immunitario" },
   { name: "Multivitaminico Vitabright", dose: "1 capsula", freq: "Giornaliero", purpose: "Multivitaminico e minerali" },
   { name: "Glucosamine Complex (Zenement)", dose: "1 capsula", freq: "Giornaliero", purpose: "Salute articolare" },
