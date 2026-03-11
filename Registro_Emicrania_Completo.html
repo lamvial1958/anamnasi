@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro Emicrania con Aura — Analisi Completa</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root {
+  --acc: #c24b38; --accL: #f3e8e5;
+  --blu: #3a6b8c; --bluL: #e8f0f5;
+  --grn: #4a7c59; --grnL: #e8f2eb;
+  --amb: #b8860b; --ambL: #fdf5e0;
+  --txt: #2c2c2c; --mut: #8a8780;
+  --bg: #f8f7f5; --card: #ffffff; --bdr: #e4e2dd;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'DM Sans', 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--txt); line-height: 1.5; }
+.container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+
+/* Header */
+.header { border-bottom: 2px solid var(--acc); padding-bottom: 16px; margin-bottom: 30px; }
+.header h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 28px; font-weight: 400; color: var(--txt); }
+.header-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 8px; }
+.header-meta span { font-size: 13px; color: var(--mut); }
+.badge { font-size: 11px; color: var(--acc); font-weight: 600; background: var(--accL); padding: 4px 10px; border-radius: 4px; }
+.header-sub { font-size: 11px; color: var(--mut); margin-top: 6px; }
+
+/* Stats */
+.stats { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+.stat { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 16px; text-align: center; flex: 1; min-width: 110px; }
+.stat-label { font-size: 9px; color: var(--mut); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+.stat-value { font-size: 26px; font-weight: 700; line-height: 1; }
+.stat-sub { font-size: 9px; color: var(--mut); margin-top: 5px; }
+
+/* Sections */
+.section { margin-bottom: 32px; }
+.section-title { font-size: 16px; font-weight: 600; color: var(--acc); margin-bottom: 4px; border-bottom: 1px solid var(--bdr); padding-bottom: 6px; }
+.section-sub { font-size: 11px; color: var(--mut); margin-bottom: 16px; }
+
+/* Cards */
+.card { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+.card h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+
+/* Bar charts */
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.bar-label { width: 100px; font-size: 12px; color: var(--mut); text-align: right; flex-shrink: 0; }
+.bar-track { flex: 1; background: var(--bdr); border-radius: 5px; height: 24px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 5px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; color: white; min-width: 30px; }
+
+/* Alert boxes */
+.alert { margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 12px; line-height: 1.6; border-left: 3px solid; }
+.alert-acc { background: var(--accL); border-color: var(--acc); color: var(--acc); }
+.alert-amb { background: var(--ambL); border-color: var(--amb); color: var(--amb); }
+.alert-grn { background: var(--grnL); border-color: var(--grn); color: var(--grn); }
+.alert-blu { background: var(--bluL); border-color: var(--blu); color: var(--blu); }
+
+/* Cluster boxes */
+.cluster-box { padding: 12px; background: var(--accL); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--acc); }
+.cluster-title { font-size: 13px; font-weight: 600; color: var(--acc); margin-bottom: 4px; }
+.cluster-dates { display: flex; gap: 6px; flex-wrap: wrap; }
+.cluster-date { background: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+
+/* Comparison */
+.compare { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.compare-col { flex: 1; min-width: 240px; border-radius: 12px; padding: 22px; }
+.compare-title { font-size: 12px; font-weight: 600; }
+.compare-sub { font-size: 10px; color: var(--mut); margin-bottom: 14px; }
+.compare-rate { font-size: 42px; font-weight: 700; line-height: 1; }
+.compare-unit { font-size: 11px; margin-bottom: 16px; }
+.compare-detail { font-size: 11px; line-height: 2; }
+
+/* Aura */
+.aura-box { padding: 12px; background: var(--bluL); border-radius: 8px; margin-bottom: 12px; font-size: 12px; line-height: 1.7; border-left: 3px solid var(--blu); }
+.aura-episode { padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid; font-size: 12px; }
+
+/* BP cards */
+.bp-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.bp-date { width: 75px; font-size: 11px; color: var(--mut); }
+.bp-sys { font-size: 20px; font-weight: 700; }
+.bp-dia { font-size: 12px; color: var(--mut); }
+.bp-tag { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 600; margin-left: auto; }
+
+/* Table */
+.reg-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.reg-table th { padding: 10px 8px; text-align: center; font-weight: 600; color: var(--mut); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--bdr); background: #f2f1ee; }
+.reg-table td { padding: 7px 6px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+.reg-table .hist { opacity: 0.65; }
+.reg-table .diet { background: var(--grnL); border-left: 3px solid var(--grn); }
+.reg-table .sat-cl { border-left: 3px solid var(--acc); background: var(--accL); }
+.day-sab { color: var(--acc); font-weight: 600; }
+.day-lun { color: var(--amb); font-weight: 600; }
+.bp-high { background: var(--accL); color: var(--acc); padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+.bp-ok { background: var(--bluL); color: var(--blu); padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+.alc-no { color: var(--grn); }
+.alc-yes { color: var(--amb); }
+td.ctx { text-align: left; font-size: 11px; color: var(--mut); }
+
+/* Footer */
+.footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--bdr); font-size: 10px; color: var(--mut); text-align: center; }
+
+/* Print */
+@media print {
+  body { background: white; }
+  .container { padding: 10px; max-width: 100%; }
+  .section { page-break-inside: avoid; }
+  .card { break-inside: avoid; }
+  .header { margin-bottom: 16px; }
+  .stats { margin-bottom: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <h1>Registro Emicrania con Aura — Analisi Completa</h1>
+  <div class="header-meta">
+    <span><strong>62 episodi</strong> · 07/06/2024 — 04/03/2026 (635 giorni ≈ 21 mesi)</span>
+    <span class="badge">USO CLINICO</span>
+  </div>
+  <div class="header-sub">Storico (giu/24 — mag/25): 39 ep. solo data · Dettagliato (ago/25 — mar/26): 23 ep. con PA, orario, contesto</div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-label">Totale</div><div class="stat-value" style="color:var(--acc)">62</div><div class="stat-sub">635 giorni</div></div>
+  <div class="stat"><div class="stat-label">Media</div><div class="stat-value">2.9/m</div><div class="stat-sub">21 mesi</div></div>
+  <div class="stat"><div class="stat-label">Sabato</div><div class="stat-value" style="color:var(--amb)">15</div><div class="stat-sub">24%</div></div>
+  <div class="stat"><div class="stat-label">Lunedì</div><div class="stat-value" style="color:var(--blu)">14</div><div class="stat-sub">23%</div></div>
+  <div class="stat"><div class="stat-label">Pre-dieta</div><div class="stat-value" style="color:var(--amb)">2.7/m</div><div class="stat-sub">52 ep. / 578gg</div></div>
+  <div class="stat"><div class="stat-label">Post-dieta</div><div class="stat-value" style="color:var(--grn)">5.3/m</div><div class="stat-sub">10 ep. / 58gg</div></div>
+</div>
+
+<!-- 1. TIMELINE -->
+<div class="section">
+  <h2 class="section-title">1. Frequenza Mensile — 21 mesi</h2>
+  <div class="section-sub">Episodi per mese. Mesi assenti = lacuna nei dati (giu-ago 2025).</div>
+  <div class="card">
+    <div class="bar-row"><div class="bar-label">Giu 24</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--blu)">2</div></div></div>
+    <div class="bar-row"><div class="bar-label">Lug 24</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--blu)">3</div></div></div>
+    <div class="bar-row"><div class="bar-label">Ago 24</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--blu)">3</div></div></div>
+    <div class="bar-row"><div class="bar-label">Set 24</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--blu)">2</div></div></div>
+    <div class="bar-row"><div class="bar-label">Ott 24</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--acc)">5</div></div></div>
+    <div class="bar-row"><div class="bar-label">Nov 24</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--blu)">3</div></div></div>
+    <div class="bar-row"><div class="bar-label">Dic 24</div><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--blu)">1</div></div></div>
+    <div class="bar-row"><div class="bar-label">Gen 25</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--acc)">5</div></div></div>
+    <div class="bar-row"><div class="bar-label">Feb 25</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--blu)">2</div></div></div>
+    <div class="bar-row"><div class="bar-label">Mar 25</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--blu)">4</div></div></div>
+    <div class="bar-row"><div class="bar-label">Apr 25</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--acc)">5</div></div></div>
+    <div class="bar-row"><div class="bar-label">Mag 25</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--blu)">4</div></div></div>
+    <div class="bar-row"><div class="bar-label" style="color:#ccc">Giu-Lug 25</div><div class="bar-track"><div class="bar-fill" style="width:6%;background:#ddd">—</div></div></div>
+    <div class="bar-row"><div class="bar-label">Ago 25</div><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--blu)">1</div></div></div>
+    <div class="bar-row"><div class="bar-label">Set 25</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--blu)">4</div></div></div>
+    <div class="bar-row"><div class="bar-label">Ott 25</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--blu)">3</div></div></div>
+    <div class="bar-row"><div class="bar-label">Nov 25</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--blu)">4</div></div></div>
+    <div class="bar-row"><div class="bar-label">Dic 25</div><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--blu)">1</div></div></div>
+    <div class="bar-row"><div class="bar-label">Gen 26</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--grn)">4</div></div></div>
+    <div class="bar-row"><div class="bar-label">Feb 26</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--acc)">5</div></div></div>
+    <div class="bar-row"><div class="bar-label">Mar 26</div><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--grn)">1</div></div></div>
+    <div class="alert alert-amb"><strong>Mesi di punta:</strong> Ott/24, Gen/25, Apr/25, Feb/26 — tutti con 5 episodi. Ciclicità ~3-4 mesi.</div>
+  </div>
+</div>
+
+<!-- 2. STAGIONALITÀ -->
+<div class="section">
+  <h2 class="section-title">2. Stagionalità</h2>
+  <div class="card">
+    <div class="bar-row"><div class="bar-label">Primavera</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--acc)">3.5/mese (14 ep.)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Estate</div><div class="bar-track"><div class="bar-fill" style="width:63%;background:var(--blu)">2.2/mese (9 ep.)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Autunno</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--acc)">3.5/mese (21 ep.)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Inverno</div><div class="bar-track"><div class="bar-fill" style="width:86%;background:var(--blu)">3.0/mese (18 ep.)</div></div></div>
+    <div class="alert alert-acc"><strong>Autunno e primavera</strong> (3.5/mese) superano estate (2.2) e inverno (3.0). Possibili trigger stagionali: cambi di luce, temperatura, pressione atmosferica.</div>
+  </div>
+</div>
+
+<!-- 3. GIORNI + SABATI -->
+<div class="section">
+  <h2 class="section-title">3. Distribuzione Settimanale e Pattern Sabato</h2>
+  <div class="card">
+    <h3>Giorno della Settimana — 62 episodi</h3>
+    <div class="bar-row"><div class="bar-label">Lunedì</div><div class="bar-track"><div class="bar-fill" style="width:93%;background:var(--amb)">14 (23%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Martedì</div><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--blu)">3 (5%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Mercoledì</div><div class="bar-track"><div class="bar-fill" style="width:47%;background:var(--blu)">7 (11%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Giovedì</div><div class="bar-track"><div class="bar-fill" style="width:67%;background:var(--blu)">10 (16%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Venerdì</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--blu)">6 (10%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Sabato</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--acc)">15 (24%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Domenica</div><div class="bar-track"><div class="bar-fill" style="width:47%;background:var(--blu)">7 (11%)</div></div></div>
+    <div class="alert alert-acc"><strong>Sabato (24%) + Lunedì (23%) = 47%</strong> di tutti gli episodi. Martedì è il giorno più sicuro (5%).</div>
+  </div>
+
+  <div class="card">
+    <h3>Cluster di Sabati Consecutivi</h3>
+    <p style="font-size:11px;color:var(--mut);margin-bottom:14px">Sequenze di episodi ogni sabato senza interruzione (7 giorni esatti).</p>
+    <div class="cluster-box">
+      <div class="cluster-title">5 sabati consecutivi (ott-nov 2024)</div>
+      <div class="cluster-dates">
+        <span class="cluster-date">12/10/2024</span><span class="cluster-date">19/10/2024</span><span class="cluster-date">26/10/2024</span><span class="cluster-date">02/11/2024</span><span class="cluster-date">09/11/2024</span>
+      </div>
+    </div>
+    <div class="cluster-box">
+      <div class="cluster-title">3 sabati consecutivi (feb 2026)</div>
+      <div class="cluster-dates">
+        <span class="cluster-date">14/02/2026</span><span class="cluster-date">21/02/2026</span><span class="cluster-date">28/02/2026</span>
+      </div>
+    </div>
+    <div class="alert alert-amb"><strong>"Weekend migraine":</strong> documentata in letteratura — associata a variazioni di cortisolo, caffeina, pattern del sonno e rilassamento post-stress lavorativo. Il pattern si ripete in due periodi distanti (ott/24 e feb/26).</div>
+  </div>
+</div>
+
+<!-- 4. PA + DIETA -->
+<div class="section">
+  <h2 class="section-title">4. Pressione Arteriosa e Impatto Dieta</h2>
+
+  <div class="compare">
+    <div class="compare-col" style="background:var(--ambL);border:1px solid rgba(184,134,11,0.2)">
+      <div class="compare-title" style="color:var(--amb)">PRE-DIETA</div>
+      <div class="compare-sub">07/06/2024 — 04/01/2026 (578gg)</div>
+      <div class="compare-rate" style="color:var(--amb)">2.7</div>
+      <div class="compare-unit" style="color:var(--amb)">episodi / mese</div>
+      <div class="compare-detail">Episodi: <strong>52</strong><br>Giorni: <strong>578</strong><br>PA media: <strong>~127 mmHg</strong> (9 mis.)</div>
+    </div>
+    <div class="compare-col" style="background:var(--grnL);border:1px solid rgba(74,124,89,0.2)">
+      <div class="compare-title" style="color:var(--grn)">POST-DIETA</div>
+      <div class="compare-sub">05/01/2026 — 04/03/2026 (58gg)</div>
+      <div class="compare-rate" style="color:var(--grn)">5.2</div>
+      <div class="compare-unit" style="color:var(--grn)">episodi / mese</div>
+      <div class="compare-detail">Episodi: <strong>10</strong><br>Giorni: <strong>58</strong><br>PA media: <strong>~112 mmHg</strong> (10 mis.)</div>
+    </div>
+  </div>
+
+  <div class="card" style="background:var(--accL);border-color:rgba(194,75,56,0.25)">
+    <h3 style="color:var(--acc)">Dissociazione PA / Frequenza</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;line-height:1.7">
+      <div style="flex:1;min-width:180px">
+        <div style="color:var(--grn);font-weight:600">✓ PA ridotta</div>
+        Media sistolica da ~127 a ~112 mmHg (−15 mmHg, −12%). Tutti i valori post-dieta nella norma.
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div style="color:var(--acc);font-weight:600">✗ Frequenza NON ridotta</div>
+        Tasso da 2.7 a 5.2 ep./mese. Gli episodi proseguono nonostante l'eliminazione di alcol e dolci.
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:10px;background:white;border-radius:6px;font-size:12px">
+      <strong>Implicazione clinica:</strong> alcol e dolci non sono trigger primari. La riduzione della PA è un beneficio indipendente ma non sufficiente a controllare l'emicrania.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>PA Sistolica durante Episodi (periodo dettagliato)</h3>
+    <div class="bp-row" style="background:var(--accL)"><div class="bp-date">28/09/2025</div><div class="bp-sys" style="color:var(--acc)">148</div><div class="bp-dia">/69</div><div class="bp-tag" style="background:var(--acc);color:white">ELEVATA</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">19/10/2025</div><div class="bp-sys" style="color:var(--blu)">136</div><div class="bp-dia">/69</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">11/10/2025</div><div class="bp-sys" style="color:var(--blu)">130</div><div class="bp-dia">/71</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">31/08/2025</div><div class="bp-sys" style="color:var(--blu)">130</div><div class="bp-dia">/60</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">20/11/2025</div><div class="bp-sys" style="color:var(--blu)">129</div><div class="bp-dia">/71</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">17/09/2025</div><div class="bp-sys" style="color:var(--blu)">128</div><div class="bp-dia">/64</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">06/11/2025</div><div class="bp-sys" style="color:var(--blu)">126</div><div class="bp-dia">/74</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">02/10/2025</div><div class="bp-sys" style="color:var(--blu)">123</div><div class="bp-dia">/60</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">16/11/2025</div><div class="bp-sys" style="color:var(--blu)">120</div><div class="bp-dia">/74</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">17/01/2026</div><div class="bp-sys" style="color:var(--grn)">118</div><div class="bp-dia">/72</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">05/01/2026</div><div class="bp-sys" style="color:var(--grn)">116</div><div class="bp-dia">/70</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">26/01/2026</div><div class="bp-sys" style="color:var(--grn)">115</div><div class="bp-dia">/73</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">28/02/2026</div><div class="bp-sys" style="color:var(--grn)">115</div><div class="bp-dia">/73</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">11/02/2026</div><div class="bp-sys" style="color:var(--grn)">112</div><div class="bp-dia">/66</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">14/02/2026</div><div class="bp-sys" style="color:var(--grn)">112</div><div class="bp-dia">/69</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">04/03/2026</div><div class="bp-sys" style="color:var(--grn)">111</div><div class="bp-dia">/71</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">16/01/2026</div><div class="bp-sys" style="color:var(--grn)">110</div><div class="bp-dia">/71</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">01/12/2025</div><div class="bp-sys" style="color:var(--grn)">108</div><div class="bp-dia">/62</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">02/02/2026</div><div class="bp-sys" style="color:var(--grn)">108</div><div class="bp-dia">/66</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+    <div class="bp-row" style="background:#fafaf8"><div class="bp-date">21/02/2026</div><div class="bp-sys" style="color:var(--grn)">104</div><div class="bp-dia">/67</div><div class="bp-tag" style="background:var(--grnL);color:var(--grn)">OTTIMALE</div></div>
+  </div>
+</div>
+
+<!-- 5. ORARIO + AURA -->
+<div class="section">
+  <h2 class="section-title">5. Finestra Oraria e Caratteristiche dell'Aura</h2>
+
+  <div class="card">
+    <h3>Fascia Oraria (23 ep. dettagliati)</h3>
+    <div class="bar-row"><div class="bar-label">Mattina</div><div class="bar-track"><div class="bar-fill" style="width:23%;background:var(--blu)">3 (13%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Pomeriggio</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--acc)">13 (57%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Sera</div><div class="bar-track"><div class="bar-fill" style="width:15%;background:var(--blu)">2 (9%)</div></div></div>
+    <div class="bar-row"><div class="bar-label">Notte/N.D.</div><div class="bar-track"><div class="bar-fill" style="width:38%;background:var(--blu)">5 (22%)</div></div></div>
+    <div class="alert alert-acc"><strong>57% nel pomeriggio</strong> (12-18h). 6 episodi con contesto lavorativo/computer. Possibile ruolo di postura, luminosità schermo, affaticamento visivo.</div>
+  </div>
+
+  <div class="card">
+    <h3>Caratteristiche dell'Aura</h3>
+    <div class="aura-box">
+      <strong>Pattern abituale:</strong> l'aura si presenta senza preferenza di lato. Inizia tipicamente come un'aura completa, ragionevolmente centralizzata nel campo visivo. Solo in casi molto specifici si manifesta lateralmente, senza preferenza per alcun emisfero.
+    </div>
+    <div class="aura-episode" style="background:var(--ambL);border-color:var(--amb)">
+      <strong>16/11/2025</strong> — Aura apparsa e scomparsa 4 volte — lavorando al computer (atipico per ripetizione)
+    </div>
+    <div class="aura-episode" style="background:var(--accL);border-color:var(--acc)">
+      <strong>21/02/2026</strong> — Aura lato sinistro — sabato pomeriggio (atipico per lateralizzazione)
+    </div>
+    <div style="font-size:11px;color:var(--mut);font-style:italic;margin-top:4px">Entrambi sono eccezioni al pattern abituale centralizzato.</div>
+  </div>
+</div>
+
+<!-- 6. REGISTRO COMPLETO -->
+<div class="section">
+  <h2 class="section-title">6. Registro Completo — 62 Episodi</h2>
+  <div class="section-sub">S = Storico (solo data) · D = Dettagliato · Sabati in cluster evidenziati · Inizio dieta in verde</div>
+  <div style="overflow-x:auto">
+    <table class="reg-table">
+      <thead><tr><th>#</th><th>Src</th><th>Data</th><th>Gi.</th><th>Ora</th><th>PA</th><th>Alcol</th><th>Contesto</th></tr></thead>
+      <tbody>
+        <tr class="hist"><td>1</td><td>S</td><td>07/06/2024</td><td>Ven</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>2</td><td>S</td><td>11/06/2024</td><td>Mar</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>3</td><td>S</td><td>01/07/2024</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>4</td><td>S</td><td>26/07/2024</td><td>Ven</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>5</td><td>S</td><td>31/07/2024</td><td>Mer</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>6</td><td>S</td><td>03/08/2024</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>7</td><td>S</td><td>12/08/2024</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>8</td><td>S</td><td>26/08/2024</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>9</td><td>S</td><td>01/09/2024</td><td>Dom</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>10</td><td>S</td><td>07/09/2024</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist sat-cl"><td>11</td><td>S</td><td>12/10/2024</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>12</td><td>S</td><td>18/10/2024</td><td>Ven</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist sat-cl"><td>13</td><td>S</td><td>19/10/2024</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>14</td><td>S</td><td>24/10/2024</td><td>Gio</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist sat-cl"><td>15</td><td>S</td><td>26/10/2024</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist sat-cl"><td>16</td><td>S</td><td>02/11/2024</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist sat-cl"><td>17</td><td>S</td><td>09/11/2024</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>18</td><td>S</td><td>16/11/2024</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>19</td><td>S</td><td>09/12/2024</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>20</td><td>S</td><td>05/01/2025</td><td>Dom</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>21</td><td>S</td><td>09/01/2025</td><td>Gio</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>22</td><td>S</td><td>18/01/2025</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>23</td><td>S</td><td>23/01/2025</td><td>Gio</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>24</td><td>S</td><td>30/01/2025</td><td>Gio</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>25</td><td>S</td><td>05/02/2025</td><td>Mer</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>26</td><td>S</td><td>27/02/2025</td><td>Gio</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>27</td><td>S</td><td>07/03/2025</td><td>Ven</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>28</td><td>S</td><td>10/03/2025</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>29</td><td>S</td><td>17/03/2025</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>30</td><td>S</td><td>29/03/2025</td><td class="day-sab">Sab</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>31</td><td>S</td><td>04/04/2025</td><td>Ven</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>32</td><td>S</td><td>07/04/2025</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>33</td><td>S</td><td>13/04/2025</td><td>Dom</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>34</td><td>S</td><td>17/04/2025</td><td>Gio</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>35</td><td>S</td><td>30/04/2025</td><td>Mer</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>36</td><td>S</td><td>05/05/2025</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>37</td><td>S</td><td>14/05/2025</td><td>Mer</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>38</td><td>S</td><td>19/05/2025</td><td class="day-lun">Lun</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr class="hist"><td>39</td><td>S</td><td>22/05/2025</td><td>Gio</td><td>—</td><td>—</td><td>—</td><td class="ctx">—</td></tr>
+        <tr><td>40</td><td>D</td><td>31/08/2025</td><td>Dom</td><td>21:00</td><td class="bp-ok">130/60</td><td class="alc-yes">Poco vino</td><td class="ctx">Giorno tranquillo</td></tr>
+        <tr><td>41</td><td>D</td><td>01/09/2025</td><td class="day-lun">Lun</td><td>15:00</td><td>—</td><td class="alc-no">No</td><td class="ctx">—</td></tr>
+        <tr><td>42</td><td>D</td><td>02/09/2025</td><td>Mar</td><td>17:00</td><td>—</td><td class="alc-no">No</td><td class="ctx">—</td></tr>
+        <tr><td>43</td><td>D</td><td>17/09/2025</td><td>Mer</td><td>12:00</td><td class="bp-ok">128/64</td><td class="alc-no">No</td><td class="ctx">—</td></tr>
+        <tr><td>44</td><td>D</td><td>28/09/2025</td><td>Dom</td><td>12:30</td><td class="bp-high">148/69</td><td class="alc-yes">Ven. prima</td><td class="ctx">—</td></tr>
+        <tr><td>45</td><td>D</td><td>02/10/2025</td><td>Gio</td><td>12:30</td><td class="bp-ok">123/60</td><td class="alc-no">No</td><td class="ctx">—</td></tr>
+        <tr><td>46</td><td>D</td><td>11/10/2025</td><td class="day-sab">Sab</td><td>20:30</td><td class="bp-ok">130/71</td><td class="alc-yes">Vino a cena</td><td class="ctx">Durante la cena</td></tr>
+        <tr><td>47</td><td>D</td><td>19/10/2025</td><td>Dom</td><td>—</td><td class="bp-ok">136/69</td><td class="alc-no">No</td><td class="ctx">Da foglio PA</td></tr>
+        <tr><td>48</td><td>D</td><td>06/11/2025</td><td>Gio</td><td>15:50</td><td class="bp-ok">126/74</td><td class="alc-no">No</td><td class="ctx">Lavorando</td></tr>
+        <tr><td>49</td><td>D</td><td>16/11/2025</td><td>Dom</td><td>—</td><td class="bp-ok">120/74</td><td class="alc-no">No</td><td class="ctx">Computer; Aura x4</td></tr>
+        <tr><td>50</td><td>D</td><td>20/11/2025</td><td>Gio</td><td>21:40</td><td class="bp-ok">129/71</td><td class="alc-no">No</td><td class="ctx">Guardando TV</td></tr>
+        <tr><td>51</td><td>D</td><td>25/11/2025</td><td>Mar</td><td>05:00</td><td>—</td><td class="alc-no">No</td><td class="ctx">Durante il sonno</td></tr>
+        <tr><td>52</td><td>D</td><td>01/12/2025</td><td class="day-lun">Lun</td><td>07:00</td><td class="bp-ok">108/62</td><td class="alc-no">No</td><td class="ctx">—</td></tr>
+        <tr class="diet"><td>53</td><td>D</td><td>05/01/2026</td><td class="day-lun">Lun</td><td>15:30</td><td class="bp-ok">116/70</td><td class="alc-no">No</td><td class="ctx">Lavorando; INIZIO DIETA</td></tr>
+        <tr><td>54</td><td>D</td><td>16/01/2026</td><td>Ven</td><td>13:30</td><td class="bp-ok">110/71</td><td class="alc-no">No (dieta)</td><td class="ctx">All'improvviso</td></tr>
+        <tr><td>55</td><td>D</td><td>17/01/2026</td><td class="day-sab">Sab</td><td>10:00</td><td class="bp-ok">118/72</td><td class="alc-no">No (dieta)</td><td class="ctx">Al risveglio</td></tr>
+        <tr><td>56</td><td>D</td><td>26/01/2026</td><td class="day-lun">Lun</td><td>15:30</td><td class="bp-ok">115/73</td><td class="alc-no">No (dieta)</td><td class="ctx">All'improvviso</td></tr>
+        <tr><td>57</td><td>D</td><td>02/02/2026</td><td class="day-lun">Lun</td><td>14:00</td><td class="bp-ok">108/66</td><td class="alc-no">No (dieta)</td><td class="ctx">—</td></tr>
+        <tr><td>58</td><td>D</td><td>11/02/2026</td><td>Mer</td><td>13:40</td><td class="bp-ok">112/66</td><td class="alc-no">No (dieta)</td><td class="ctx">Computer-lavoro</td></tr>
+        <tr class="sat-cl"><td>59</td><td>D</td><td>14/02/2026</td><td class="day-sab">Sab</td><td>14:00</td><td class="bp-ok">112/69</td><td class="alc-no">No (dieta)</td><td class="ctx">—</td></tr>
+        <tr class="sat-cl"><td>60</td><td>D</td><td>21/02/2026</td><td class="day-sab">Sab</td><td>16:00</td><td class="bp-ok">104/67</td><td class="alc-no">No (dieta)</td><td class="ctx">Aura lato sinistro</td></tr>
+        <tr class="sat-cl"><td>61</td><td>D</td><td>28/02/2026</td><td class="day-sab">Sab</td><td>15:00</td><td class="bp-ok">115/73</td><td class="alc-no">No (dieta)</td><td class="ctx">—</td></tr>
+        <tr><td>62</td><td>D</td><td>04/03/2026</td><td>Mer</td><td>11:00</td><td class="bp-ok">111/71</td><td class="alc-no">No (dieta)</td><td class="ctx">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 7. SINTESI CLINICA -->
+<div class="section">
+  <h2 class="section-title">7. Sintesi delle Evidenze e Ipotesi Cliniche</h2>
+
+  <div class="card">
+    <h3 style="color:var(--acc)">Evidenze</h3>
+    <div style="padding:12px;border-left:4px solid var(--acc);background:#fafaf8;border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.7">
+      <span style="background:var(--acc);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">E1</span>
+      <strong> Frequenza:</strong> 62 episodi in 635 giorni = 2.9 ep./mese. Picchi ciclici ogni 3-4 mesi (ott/24, gen/25, apr/25, feb/26, tutti con 5 episodi).
+    </div>
+    <div style="padding:12px;border-left:4px solid var(--acc);background:#fff;border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.7">
+      <span style="background:var(--acc);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">E2</span>
+      <strong> Weekend migraine:</strong> Sabato 24%, Lunedì 23% = 47% degli episodi. Due cluster di sabati consecutivi: 5 in ott-nov/24, 3 in feb/26. Pattern ripetuto in periodi distanti.
+    </div>
+    <div style="padding:12px;border-left:4px solid var(--amb);background:#fafaf8;border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.7">
+      <span style="background:var(--amb);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">E3</span>
+      <strong> Stagionalità:</strong> Autunno e primavera 3.5 ep./mese vs estate 2.2/mese. Ottobre è il mese con maggiore incidenza storica (8 episodi in due anni).
+    </div>
+    <div style="padding:12px;border-left:4px solid var(--grn);background:#fff;border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.7">
+      <span style="background:var(--grn);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">E4</span>
+      <strong> Dissociazione PA/Frequenza:</strong> Dieta (no alcol, no dolci dal 05/01/2026) ha ridotto la PA da ~127 a ~112 mmHg (−12%), ma la frequenza è aumentata da 2.7 a 5.2 ep./mese. Alcol e dolci non risultano trigger primari.
+    </div>
+    <div style="padding:12px;border-left:4px solid var(--blu);background:#fafaf8;border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.7">
+      <span style="background:var(--blu);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">E5</span>
+      <strong> Pomeriggio dominante:</strong> 57% degli episodi dettagliati tra 12-18h. 6 episodi con contesto esplicito lavoro/computer.
+    </div>
+    <div style="padding:12px;border-left:4px solid var(--amb);background:#fff;border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.7">
+      <span style="background:var(--amb);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">E6</span>
+      <strong> Aura atipica:</strong> Pattern abituale centralizzato. Eccezioni: aura x4 (16/11/2025) e lateralizzazione sinistra (21/02/2026).
+    </div>
+  </div>
+
+  <div class="card" style="background:var(--ambL);border-color:rgba(184,134,11,0.25)">
+    <h3 style="color:var(--amb)">Ipotesi da Discutere con la Neurologista</h3>
+    <p style="font-size:11px;color:var(--mut);margin-bottom:14px">Basate sulle evidenze sopra. Non costituiscono diagnosi.</p>
+
+    <div style="padding:14px;border-left:4px solid var(--acc);background:#fffcf5;border-radius:8px;margin-bottom:10px;font-size:12px;line-height:1.7">
+      <span style="background:var(--acc);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">H1</span>
+      <strong> Emicrania da rilassamento (let-down migraine)</strong><br>
+      Concentrazione al sabato = rilassamento post-stress. Cortisolo elevato durante la settimana lavorativa, calo brusco il sabato → vasodilatazione → trigger. Lunedì = possibile rimbalzo dello stress. Rif.: Lipton et al., "Reduction in perceived stress as a migraine trigger" (Neurology, 2014).
+    </div>
+    <div style="padding:14px;border-left:4px solid var(--amb);background:#fffcf5;border-radius:8px;margin-bottom:10px;font-size:12px;line-height:1.7">
+      <span style="background:var(--amb);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">H2</span>
+      <strong> Trigger ambientale stagionale</strong><br>
+      L'aumento in autunno e primavera coincide con cambi di luce (ore di sole), variazioni di pressione atmosferica e transizioni di temperatura — fattori noti per l'emicrania con aura.
+    </div>
+    <div style="padding:14px;border-left:4px solid var(--blu);background:#fffcf5;border-radius:8px;margin-bottom:10px;font-size:12px;line-height:1.7">
+      <span style="background:var(--blu);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">H3</span>
+      <strong> Componente posturale/visiva occupazionale</strong><br>
+      57% pomeridiano + 6 episodi con contesto lavoro/computer suggeriscono un ruolo dell'affaticamento visivo cumulativo, postura mantenuta, e possibilmente la luce blu o frequenza di refresh dello schermo.
+    </div>
+    <div style="padding:14px;border-left:4px solid var(--grn);background:#fffcf5;border-radius:8px;margin-bottom:10px;font-size:12px;line-height:1.7">
+      <span style="background:var(--grn);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">H4</span>
+      <strong> Esclusione del trigger alimentare</strong><br>
+      La dieta senza alcol e dolci non ha ridotto la frequenza (da 2.7 a 5.2 ep./mese). I fattori alimentari non sono trigger primari. La PA è migliorata indipendentemente.
+    </div>
+    <div style="padding:14px;border-left:4px solid var(--acc);background:#fffcf5;border-radius:8px;margin-bottom:10px;font-size:12px;line-height:1.7">
+      <span style="background:var(--acc);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">H5</span>
+      <strong> Monitorare la progressione dell'aura</strong><br>
+      Due episodi con aura atipica (ripetizione x4 e lateralizzazione sinistra) in contesto di aura abitualmente centralizzata. La neurologista potrebbe valutare approfondimenti (es. RM encefalo) per escludere cause strutturali.
+    </div>
+  </div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="alert alert-acc" style="margin-bottom:20px">
+  <strong>Disclaimer:</strong> Questo documento è un registro di raccolta dati. L'interpretazione clinica e la diagnosi sono di competenza esclusiva del medico specialista.
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Generato: 11/03/2026 · 62 episodi (giu/2024 — mar/2026) · Dati PA incrociati con foglio Pressao.xlsx · Documento per uso clinico personale
+</div>
+
+</div>
+</body>
+</html>
