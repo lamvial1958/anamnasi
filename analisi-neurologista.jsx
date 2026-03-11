@@ -68,6 +68,21 @@ const episodes = [
 const N = 62;
 const DIET = "2026-01-05";
 
+const medications = [
+  { category: "Prescrizione medica", items: [
+    { name: "Rosuvastatina + Ezetimibe Teva", dose: "20 mg / 10 mg", freq: "Giornaliero", purpose: "Controllo colesterolo" },
+    { name: "Candesartan EG Stada", dose: "8 mg", freq: "Giornaliero", purpose: "Controllo pressione arteriosa" },
+  ]},
+  { category: "Vitamine e integratori", items: [
+    { name: "Vitamina D", dose: "38 gocce", freq: "1x / settimana", purpose: "Integrazione vitaminica" },
+    { name: "Vitamina C + Zinco", dose: "1 g + 20 mg", freq: "Giornaliero", purpose: "Supporto immunitario" },
+    { name: "Multivitaminico Vitabright", dose: "1 capsula", freq: "Giornaliero", purpose: "Multivitaminico e minerali" },
+    { name: "Glucosamine Complex (Zenement)", dose: "1 capsula", freq: "Giornaliero", purpose: "Salute articolare" },
+    { name: "Premium Omega-3 (Zenement)", dose: "1 capsula", freq: "Giornaliero", purpose: "Acidi grassi essenziali" },
+    { name: "Vitamina B12 (WeightWorld)", dose: "1 capsula", freq: "Giornaliero", purpose: "Integrazione B12" },
+  ]},
+];
+
 function fmtD(iso) {
   const [y, m, d] = iso.split("-");
   return d + "/" + m + "/" + y;
@@ -205,7 +220,7 @@ export default function App() {
 
   const tabs = [
     ["timeline", "1. Timeline"], ["frequenza", "2. Frequenza"], ["heatmap", "3. Giorni/Sabati"],
-    ["pressione", "4. PA/Dieta"], ["orario", "5. Orario/Aura"], ["sintesi", "6. Sintesi Clinica"], ["registro", "Registro"]
+    ["pressione", "4. PA/Dieta"], ["orario", "5. Orario/Aura"], ["sintesi", "6. Sintesi Clinica"], ["farmaci", "7. Farmaci"], ["registro", "Registro"]
   ];
 
   const workEps = detailed.filter(function (e) { return e.context && (e.context.toLowerCase().indexOf("lavor") >= 0 || e.context.toLowerCase().indexOf("computer") >= 0); });
@@ -483,6 +498,46 @@ export default function App() {
             <div style={{ background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "10px", padding: "16px", fontSize: "12px", color: col.acc }}>
               <strong>Disclaimer:</strong> Questo documento è un registro di raccolta dati con analisi statistica descrittiva. Le ipotesi presentate sono basate sui pattern osservati e su riferimenti alla letteratura medica, ma l'interpretazione clinica e la diagnosi sono di competenza esclusiva del medico specialista.
             </div>
+          </div>
+        )}
+
+        {/* 7. FARMACI */}
+        {tab === "farmaci" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {medications.map(function (group, gi) {
+              var isRx = gi === 0;
+              var accent = isRx ? col.acc : col.grn;
+              var accentBg = isRx ? col.accL : col.grnL;
+              return (
+                <div key={gi} style={cardS}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+                    <span style={{ background: accent, color: "#fff", padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700" }}>{isRx ? "Rx" : "OTC"}</span>
+                    <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>{group.category}</h3>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {group.items.map(function (med, mi) {
+                      return (
+                        <div key={mi} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: accentBg, borderRadius: "8px", borderLeft: "3px solid " + accent, flexWrap: "wrap" }}>
+                          <div style={{ flex: 2, minWidth: "160px" }}>
+                            <div style={{ fontSize: "13px", fontWeight: "600", color: col.txt }}>{med.name}</div>
+                            <div style={{ fontSize: "10px", color: col.mut, marginTop: "2px" }}>{med.purpose}</div>
+                          </div>
+                          <div style={{ flex: 1, minWidth: "80px" }}>
+                            <div style={{ fontSize: "11px", fontWeight: "600", color: accent }}>{med.dose}</div>
+                          </div>
+                          <div style={{ minWidth: "80px" }}>
+                            <span style={{ background: "#fff", padding: "3px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "500", color: col.mut }}>{med.freq}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+            <Alert bg={col.bluL} border={col.blu} color={col.blu}>
+              <strong>Nota per la neurologista:</strong> Candesartan (ARB) è utilizzato anche in profilassi dell'emicrania in alcuni protocolli. Verificare se la dose attuale (8 mg) possa avere effetto profilattico o se un aggiustamento posologico sia indicato.
+            </Alert>
           </div>
         )}
 
