@@ -80,6 +80,7 @@ const integratori = [
   { name: "Glucosamine Complex (Zenement)", dose: "1 capsula", freq: "Giornaliero", purpose: "Salute articolare" },
   { name: "Premium Omega-3 (Zenement)", dose: "1 capsula", freq: "Giornaliero", purpose: "Acidi grassi essenziali" },
   { name: "Vitamina B12 (WeightWorld)", dose: "1 capsula", freq: "Giornaliero", purpose: "Integrazione B12" },
+  { name: "Aura Stop", dose: "1 capsula mattina + 1 sera", freq: "2x / giorno", purpose: "Profilassi emicrania con aura" },
 ];
 
 const farmaciEstemporanei = [
