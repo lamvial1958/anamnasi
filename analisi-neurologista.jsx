@@ -67,6 +67,7 @@ const episodes = [
 
 const N = 62;
 const DIET = "2026-01-05";
+const CANDESARTAN = "2025-09-20";
 
 const farmaci = [
   { name: "Rosuvastatina + Ezetimibe Teva", dose: "20 mg / 10 mg", freq: "Giornaliero", purpose: "Controllo colesterolo" },
@@ -367,7 +368,30 @@ export default function App() {
         )}
 
         {/* 4. PA/DIETA */}
-        {tab === "pressione" && (
+        {tab === "pressione" && (function () {
+          var chartH = 220, chartPadL = 50, chartPadR = 20, chartPadT = 30, chartPadB = 50;
+          var bpSorted = bpEps.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+          var firstDate = new Date(bpSorted[0].date);
+          var lastDate = new Date(bpSorted[bpSorted.length - 1].date);
+          var totalMs = lastDate - firstDate || 1;
+          var allS = bpSorted.map(function (e) { return e.s; });
+          var allD = bpSorted.map(function (e) { return e.d; });
+          var minV = Math.min(Math.min.apply(null, allD), 55);
+          var maxV = Math.max(Math.max.apply(null, allS), 150);
+          var range = maxV - minV || 1;
+          var innerW = 100;
+          function xPct(d) { return ((new Date(d) - firstDate) / totalMs) * 100; }
+          function yPct(v) { return 100 - ((v - minV) / range) * 100; }
+          var candesX = xPct(CANDESARTAN);
+          var dietX = xPct(DIET);
+          var thresholds = [140, 120, 90];
+          // compute averages per phase
+          var preCanBP = bpSorted.filter(function (e) { return e.date < CANDESARTAN; });
+          var postCanPreDietBP = bpSorted.filter(function (e) { return e.date >= CANDESARTAN && e.date < DIET; });
+          var postDietBP = bpSorted.filter(function (e) { return e.date >= DIET; });
+          function avgSys(arr) { return arr.length ? Math.round(arr.reduce(function (a, b) { return a + b.s; }, 0) / arr.length) : null; }
+          function avgDia(arr) { return arr.length ? Math.round(arr.reduce(function (a, b) { return a + b.d; }, 0) / arr.length) : null; }
+          return (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
               {[
@@ -388,15 +412,119 @@ export default function App() {
                 );
               })}
             </div>
+
+            {/* BP TIMELINE CHART */}
+            <div style={cardS}>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 4px" }}>Storico Pressione Arteriosa</h3>
+              <div style={{ fontSize: "10px", color: col.mut, marginBottom: "14px" }}>Sistolica e diastolica durante episodi di emicrania con eventi correlati</div>
+              <div style={{ position: "relative", width: "100%", height: chartH + chartPadT + chartPadB + "px", overflow: "visible" }}>
+                <svg viewBox={"0 0 " + (innerW + chartPadL + chartPadR) + " " + (chartH + chartPadT + chartPadB)} style={{ width: "100%", height: "100%", overflow: "visible" }} preserveAspectRatio="none">
+                  {/* threshold lines */}
+                  {thresholds.map(function (t) {
+                    var yy = chartPadT + (yPct(t) / 100) * chartH;
+                    return <g key={t}><line x1={chartPadL} x2={chartPadL + innerW} y1={yy} y2={yy} stroke={t >= 140 ? col.acc + "40" : t >= 120 ? col.amb + "40" : col.grn + "40"} strokeDasharray="3,3" strokeWidth="0.5" /><text x={chartPadL - 3} y={yy + 1.5} textAnchor="end" fontSize="4" fill={col.mut}>{t}</text></g>;
+                  })}
+                  {/* Y-axis labels */}
+                  <text x={chartPadL - 3} y={chartPadT + 2} textAnchor="end" fontSize="4" fill={col.mut}>{maxV}</text>
+                  <text x={chartPadL - 3} y={chartPadT + chartH + 2} textAnchor="end" fontSize="4" fill={col.mut}>{minV}</text>
+
+                  {/* Candesartan start annotation */}
+                  {(function () {
+                    var cx = chartPadL + (candesX / 100) * innerW;
+                    return <g>
+                      <line x1={cx} x2={cx} y1={chartPadT - 5} y2={chartPadT + chartH} stroke={col.blu} strokeDasharray="2,2" strokeWidth="0.6" />
+                      <rect x={cx - 16} y={chartPadT - 12} width="32" height="7" rx="1.5" fill={col.bluL} stroke={col.blu} strokeWidth="0.3" />
+                      <text x={cx} y={chartPadT - 7} textAnchor="middle" fontSize="3.5" fill={col.blu} fontWeight="600">Candesartan</text>
+                    </g>;
+                  })()}
+
+                  {/* Diet start annotation */}
+                  {(function () {
+                    var dx = chartPadL + (dietX / 100) * innerW;
+                    return <g>
+                      <line x1={dx} x2={dx} y1={chartPadT - 5} y2={chartPadT + chartH} stroke={col.grn} strokeDasharray="2,2" strokeWidth="0.6" />
+                      <rect x={dx - 10} y={chartPadT - 12} width="20" height="7" rx="1.5" fill={col.grnL} stroke={col.grn} strokeWidth="0.3" />
+                      <text x={dx} y={chartPadT - 7} textAnchor="middle" fontSize="3.5" fill={col.grn} fontWeight="600">Dieta</text>
+                    </g>;
+                  })()}
+
+                  {/* Systolic line */}
+                  <polyline fill="none" stroke={col.acc} strokeWidth="0.8" strokeLinejoin="round" points={bpSorted.map(function (e) {
+                    return (chartPadL + (xPct(e.date) / 100) * innerW) + "," + (chartPadT + (yPct(e.s) / 100) * chartH);
+                  }).join(" ")} />
+                  {/* Diastolic line */}
+                  <polyline fill="none" stroke={col.blu} strokeWidth="0.8" strokeLinejoin="round" points={bpSorted.map(function (e) {
+                    return (chartPadL + (xPct(e.date) / 100) * innerW) + "," + (chartPadT + (yPct(e.d) / 100) * chartH);
+                  }).join(" ")} />
+
+                  {/* Systolic dots */}
+                  {bpSorted.map(function (e, i) {
+                    var cx = chartPadL + (xPct(e.date) / 100) * innerW;
+                    var cy = chartPadT + (yPct(e.s) / 100) * chartH;
+                    return <circle key={"s" + i} cx={cx} cy={cy} r="1.5" fill={e.s >= 140 ? col.acc : e.s < 120 ? col.grn : col.amb} stroke="#fff" strokeWidth="0.4" />;
+                  })}
+                  {/* Diastolic dots */}
+                  {bpSorted.map(function (e, i) {
+                    var cx = chartPadL + (xPct(e.date) / 100) * innerW;
+                    var cy = chartPadT + (yPct(e.d) / 100) * chartH;
+                    return <circle key={"d" + i} cx={cx} cy={cy} r="1.2" fill={col.blu} stroke="#fff" strokeWidth="0.3" />;
+                  })}
+
+                  {/* X-axis date labels */}
+                  {bpSorted.filter(function (_, i) { return i === 0 || i === bpSorted.length - 1 || i % Math.max(1, Math.floor(bpSorted.length / 6)) === 0; }).map(function (e, i) {
+                    var cx = chartPadL + (xPct(e.date) / 100) * innerW;
+                    return <text key={"xl" + i} x={cx} y={chartPadT + chartH + 8} textAnchor="middle" fontSize="3.5" fill={col.mut}>{fmtD(e.date).slice(0, 5)}</text>;
+                  })}
+                </svg>
+              </div>
+              {/* Legend */}
+              <div style={{ display: "flex", gap: "16px", justifyContent: "center", fontSize: "10px", color: col.mut, marginTop: "4px" }}>
+                <span><span style={{ display: "inline-block", width: "10px", height: "3px", background: col.acc, borderRadius: "2px", marginRight: "4px", verticalAlign: "middle" }}></span>Sistolica</span>
+                <span><span style={{ display: "inline-block", width: "10px", height: "3px", background: col.blu, borderRadius: "2px", marginRight: "4px", verticalAlign: "middle" }}></span>Diastolica</span>
+                <span><span style={{ display: "inline-block", width: "8px", height: "8px", border: "1.5px dashed " + col.blu, borderRadius: "1px", marginRight: "4px", verticalAlign: "middle" }}></span>Candesartan (20/09/2025)</span>
+                <span><span style={{ display: "inline-block", width: "8px", height: "8px", border: "1.5px dashed " + col.grn, borderRadius: "1px", marginRight: "4px", verticalAlign: "middle" }}></span>Dieta (05/01/2026)</span>
+              </div>
+            </div>
+
+            {/* Phase comparison cards */}
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              {[
+                { title: "Pre-Candesartan", sub: "Prima del 20/09/2025", bg: col.accL, fg: col.acc, data: preCanBP },
+                { title: "Candesartan + Pre-Dieta", sub: "20/09/2025 — 04/01/2026", bg: col.bluL, fg: col.blu, data: postCanPreDietBP },
+                { title: "Candesartan + Dieta", sub: "Dal 05/01/2026", bg: col.grnL, fg: col.grn, data: postDietBP },
+              ].map(function (ph, i) {
+                var sAvg = avgSys(ph.data);
+                var dAvg = avgDia(ph.data);
+                return (
+                  <div key={i} style={{ flex: 1, minWidth: "180px", background: ph.bg, borderRadius: "10px", padding: "16px", border: "1px solid " + ph.fg + "30" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "600", color: ph.fg }}>{ph.title}</div>
+                    <div style={{ fontSize: "9px", color: col.mut, marginBottom: "10px" }}>{ph.sub}</div>
+                    {ph.data.length > 0 ? (
+                      <div>
+                        <div style={{ fontSize: "28px", fontWeight: "700", color: ph.fg, lineHeight: 1 }}>{sAvg}<span style={{ fontSize: "14px", fontWeight: "400" }}>/{dAvg}</span></div>
+                        <div style={{ fontSize: "10px", color: ph.fg, marginTop: "4px" }}>mmHg media ({ph.data.length} mis.)</div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: "11px", color: col.mut, fontStyle: "italic" }}>Nessuna misurazione</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* PA durante Episodi - list view */}
             <div style={cardS}>
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>PA durante Episodi</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {bpEps.map(function (e) {
+                  var phase = e.date < CANDESARTAN ? "pre-C" : e.date < DIET ? "C" : "C+D";
+                  var phColor = e.date < CANDESARTAN ? col.acc : e.date < DIET ? col.blu : col.grn;
                   return (
                     <div key={e.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px", background: e.s >= 140 ? col.accL : "#fafaf8", borderRadius: "8px", flexWrap: "wrap" }}>
                       <div style={{ width: "75px", fontSize: "11px", color: col.mut }}>{fmtD(e.date)}</div>
                       <span style={{ fontSize: "20px", fontWeight: "700", color: e.s >= 140 ? col.acc : e.s < 120 ? col.grn : col.blu }}>{e.s}</span>
                       <span style={{ fontSize: "12px", color: col.mut }}>/{e.d}</span>
+                      <span style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "3px", background: phColor + "20", color: phColor, fontWeight: "600" }}>{phase}</span>
                       <div style={{ marginLeft: "auto", fontSize: "10px" }}>
                         {e.s >= 140 && <span style={{ background: col.acc, color: "#fff", padding: "2px 6px", borderRadius: "3px", fontWeight: "600" }}>ELEVATA</span>}
                         {e.s < 120 && <span style={{ background: col.grnL, color: col.grn, padding: "2px 6px", borderRadius: "3px", fontWeight: "600" }}>OTTIMALE</span>}
@@ -406,6 +534,7 @@ export default function App() {
                 })}
               </div>
             </div>
+
             <div style={{ ...cardS, background: col.accL, borderColor: col.acc + "40" }}>
               <h3 style={{ fontSize: "13px", fontWeight: "600", color: col.acc, margin: "0 0 8px" }}>Dissociazione PA / Frequenza</h3>
               <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "12px", lineHeight: "1.7" }}>
@@ -420,7 +549,8 @@ export default function App() {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* 5. ORARIO/AURA */}
         {tab === "orario" && (
