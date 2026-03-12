@@ -176,46 +176,59 @@ export default function App() {
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
 
-  /* --- Feature 6: localStorage episodes --- */
-  const [extraEpisodes, setExtraEpisodes] = useState(function () {
+  /* --- Unified daily log (localStorage) --- */
+  const [dailyLog, setDailyLog] = useState(function () {
     try {
-      var stored = localStorage.getItem("anamnesi-extra-episodes");
+      var stored = localStorage.getItem("anamnesi-daily-log");
       return stored ? JSON.parse(stored) : [];
     } catch (e) { return []; }
   });
 
-  /* --- Feature 3/4: localStorage weight and sleep --- */
-  const [weightData, setWeightData] = useState(function () {
-    try {
-      var stored = localStorage.getItem("anamnesi-weight");
-      return stored ? JSON.parse(stored) : defaultWeightData;
-    } catch (e) { return defaultWeightData; }
-  });
-  const [sleepData, setSleepData] = useState(function () {
-    try {
-      var stored = localStorage.getItem("anamnesi-sleep");
-      return stored ? JSON.parse(stored) : defaultSleepData;
-    } catch (e) { return defaultSleepData; }
+  /* Persist daily log to localStorage */
+  useEffect(function () {
+    localStorage.setItem("anamnesi-daily-log", JSON.stringify(dailyLog));
+  }, [dailyLog]);
+
+  /* --- Derive data from daily log --- */
+  var extraEpisodes = dailyLog.filter(function (entry) { return entry.migraine; }).map(function (entry, i) {
+    var bp = entry.bp || null;
+    return {
+      id: episodes.length + i + 1,
+      date: entry.date,
+      wd: calcWd(entry.date),
+      time: entry.migraineTime || null,
+      bp: bp,
+      alcohol: entry.alcohol || null,
+      context: entry.migraineContext || null,
+      src: "D"
+    };
   });
 
-  /* Persist to localStorage */
-  useEffect(function () {
-    localStorage.setItem("anamnesi-extra-episodes", JSON.stringify(extraEpisodes));
-  }, [extraEpisodes]);
-  useEffect(function () {
-    localStorage.setItem("anamnesi-weight", JSON.stringify(weightData));
-  }, [weightData]);
-  useEffect(function () {
-    localStorage.setItem("anamnesi-sleep", JSON.stringify(sleepData));
-  }, [sleepData]);
+  var weightData = defaultWeightData.concat(
+    dailyLog.filter(function (entry) { return entry.kg !== null && entry.kg !== undefined; }).map(function (entry) {
+      return { date: entry.date, kg: entry.kg };
+    })
+  ).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
 
-  /* --- Feature 6: Entry form state --- */
+  var sleepData = defaultSleepData.concat(
+    dailyLog.filter(function (entry) { return entry.sleepHours !== null && entry.sleepHours !== undefined; }).map(function (entry) {
+      return { date: entry.date, hours: entry.sleepHours, quality: entry.sleepQuality || "media" };
+    })
+  ).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+
+  /* --- Unified form state --- */
   const [formDate, setFormDate] = useState("");
-  const [formTime, setFormTime] = useState("");
   const [formBpS, setFormBpS] = useState("");
   const [formBpD, setFormBpD] = useState("");
-  const [formAlcohol, setFormAlcohol] = useState("");
+  const [formKg, setFormKg] = useState("");
+  const [formSleepHours, setFormSleepHours] = useState("");
+  const [formSleepQuality, setFormSleepQuality] = useState("");
+  const [formMigraine, setFormMigraine] = useState(false);
+  const [formTime, setFormTime] = useState("");
   const [formContext, setFormContext] = useState("");
+  const [formAlcohol, setFormAlcohol] = useState("");
+  const [formNotes, setFormNotes] = useState("");
+  const [showStorico, setShowStorico] = useState(false);
 
   /* Merge hardcoded + extra episodes */
   var allEpisodes = episodes.concat(extraEpisodes).slice().sort(function (a, b) {
@@ -319,29 +332,38 @@ export default function App() {
 
   const workEps = detailed.filter(function (e) { return e.context && (e.context.toLowerCase().indexOf("lavor") >= 0 || e.context.toLowerCase().indexOf("computer") >= 0); });
 
-  /* --- Feature 6: Add episode handler --- */
-  function handleAddEpisode(evt) {
+  /* --- Unified daily log: Add entry handler --- */
+  function handleAddDailyEntry(evt) {
     evt.preventDefault();
     if (!formDate) return;
-    var wd = calcWd(formDate);
     var bp = (formBpS && formBpD) ? formBpS + "/" + formBpD : null;
-    var newEp = {
-      id: allEpisodes.length + 1,
+    var kg = formKg ? parseFloat(formKg) : null;
+    var sleepH = formSleepHours ? parseFloat(formSleepHours) : null;
+    var sleepQ = formSleepQuality || null;
+    var entry = {
       date: formDate,
-      wd: wd,
-      time: formTime || null,
       bp: bp,
-      alcohol: formAlcohol || null,
-      context: formContext || null,
-      src: "D"
+      kg: kg,
+      sleepHours: sleepH,
+      sleepQuality: sleepQ,
+      migraine: formMigraine,
+      migraineTime: formMigraine ? (formTime || null) : null,
+      migraineContext: formMigraine ? (formContext || null) : null,
+      alcohol: formMigraine ? (formAlcohol || null) : null,
+      notes: formNotes || null
     };
-    setExtraEpisodes(function (prev) { return prev.concat([newEp]); });
-    setFormDate(""); setFormTime(""); setFormBpS(""); setFormBpD(""); setFormAlcohol(""); setFormContext("");
+    setDailyLog(function (prev) { return prev.concat([entry]); });
+    setFormDate(""); setFormBpS(""); setFormBpD(""); setFormKg(""); setFormSleepHours(""); setFormSleepQuality("");
+    setFormMigraine(false); setFormTime(""); setFormContext(""); setFormAlcohol(""); setFormNotes("");
   }
 
-  function handleClearExtra() {
-    setExtraEpisodes([]);
-    localStorage.removeItem("anamnesi-extra-episodes");
+  function handleDeleteDailyEntry(idx) {
+    setDailyLog(function (prev) { return prev.filter(function (_, i) { return i !== idx; }); });
+  }
+
+  function handleClearDailyLog() {
+    setDailyLog([]);
+    localStorage.removeItem("anamnesi-daily-log");
   }
 
   /* --- Feature 4: Sleep stats --- */
@@ -993,14 +1015,15 @@ export default function App() {
           </div>
         )}
 
-        {/* 8. REGISTRO */}
+        {/* 8. REGISTRO — Diario di Salute */}
         {tab === "registro" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
-            {/* Feature 6: Entry form */}
+            {/* Unified daily health log form */}
             <div style={cardS}>
-              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px" }}>Aggiungi Episodio</h3>
-              <form onSubmit={handleAddEpisode} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px" }}>Diario di Salute</h3>
+              <form onSubmit={handleAddDailyEntry} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {/* Row 1: Date, BP, Weight */}
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
                   <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
                     Data *
@@ -1011,50 +1034,156 @@ export default function App() {
                     <input type="text" value={formDate ? calcWd(formDate) : ""} readOnly style={{ ...inputS, background: "#f5f5f3", width: "50px" }} />
                   </label>
                   <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
-                    Ora
-                    <input type="time" value={formTime} onChange={function (e) { setFormTime(e.target.value); }} style={inputS} />
-                  </label>
-                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
                     PA Sist.
-                    <input type="number" value={formBpS} onChange={function (e) { setFormBpS(e.target.value); }} placeholder="120" min="60" max="220" style={{ ...inputS, width: "60px" }} />
+                    <input type="number" value={formBpS} onChange={function (e) { setFormBpS(e.target.value); }} placeholder="120" min="60" max="220" style={{ ...inputS, width: "65px" }} />
                   </label>
                   <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
                     PA Diast.
-                    <input type="number" value={formBpD} onChange={function (e) { setFormBpD(e.target.value); }} placeholder="70" min="30" max="140" style={{ ...inputS, width: "60px" }} />
+                    <input type="number" value={formBpD} onChange={function (e) { setFormBpD(e.target.value); }} placeholder="70" min="30" max="140" style={{ ...inputS, width: "65px" }} />
                   </label>
                   <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
-                    Alcol
-                    <select value={formAlcohol} onChange={function (e) { setFormAlcohol(e.target.value); }} style={{ ...inputS, minWidth: "100px" }}>
-                      <option value="">—</option>
-                      <option value="No">No</option>
-                      <option value="No (dieta)">No (dieta)</option>
-                      <option value="Sì">Sì</option>
-                    </select>
-                  </label>
-                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, flex: 1, minWidth: "120px" }}>
-                    Contesto
-                    <input type="text" value={formContext} onChange={function (e) { setFormContext(e.target.value); }} placeholder="es. Lavorando, Al risveglio..." style={inputS} />
+                    Peso (kg)
+                    <input type="number" value={formKg} onChange={function (e) { setFormKg(e.target.value); }} placeholder="115.0" min="40" max="250" step="0.05" style={{ ...inputS, width: "80px" }} />
                   </label>
                 </div>
+
+                {/* Row 2: Sleep */}
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                    Sonno notte prec. (ore)
+                    <input type="number" value={formSleepHours} onChange={function (e) { setFormSleepHours(e.target.value); }} placeholder="7.0" min="0" max="16" step="0.5" style={{ ...inputS, width: "70px" }} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                    Qualità sonno
+                    <select value={formSleepQuality} onChange={function (e) { setFormSleepQuality(e.target.value); }} style={{ ...inputS, minWidth: "100px" }}>
+                      <option value="">—</option>
+                      <option value="buona">Buona</option>
+                      <option value="media">Media</option>
+                      <option value="scarsa">Scarsa</option>
+                    </select>
+                  </label>
+                </div>
+
+                {/* Row 3: Migraine toggle */}
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", padding: "8px 12px", background: formMigraine ? col.accL : "#fafaf8", borderRadius: "8px", border: "1px solid " + (formMigraine ? col.acc + "40" : col.bdr), transition: "all 0.2s" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "600", color: formMigraine ? col.acc : col.mut, cursor: "pointer" }}>
+                    <input type="checkbox" checked={formMigraine} onChange={function (e) { setFormMigraine(e.target.checked); }} style={{ width: "16px", height: "16px", accentColor: col.acc }} />
+                    Episodio emicrania
+                  </label>
+                </div>
+
+                {/* Row 4: Migraine details (shown only if migraine checked) */}
+                {formMigraine && (
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end", padding: "10px 12px", background: col.accL, borderRadius: "8px", borderLeft: "3px solid " + col.acc }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.acc }}>
+                      Ora
+                      <input type="time" value={formTime} onChange={function (e) { setFormTime(e.target.value); }} style={inputS} />
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.acc, flex: 1, minWidth: "120px" }}>
+                      Contesto
+                      <input type="text" value={formContext} onChange={function (e) { setFormContext(e.target.value); }} placeholder="es. Lavorando, Al risveglio..." style={inputS} />
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.acc }}>
+                      Alcol
+                      <select value={formAlcohol} onChange={function (e) { setFormAlcohol(e.target.value); }} style={{ ...inputS, minWidth: "100px" }}>
+                        <option value="">—</option>
+                        <option value="No">No</option>
+                        <option value="No (dieta)">No (dieta)</option>
+                        <option value="Sì">Sì</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
+
+                {/* Row 5: Notes */}
+                <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                  Note
+                  <input type="text" value={formNotes} onChange={function (e) { setFormNotes(e.target.value); }} placeholder="Note generali della giornata..." style={{ ...inputS, width: "100%" }} />
+                </label>
+
+                {/* Submit and clear buttons */}
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <button type="submit" style={{ padding: "8px 20px", fontSize: "12px", fontWeight: "600", color: "#fff", background: col.grn, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
-                    Aggiungi
+                    Registra
                   </button>
-                  {extraEpisodes.length > 0 && (
-                    <button type="button" onClick={handleClearExtra} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.acc, background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
-                      Cancella aggiunti ({extraEpisodes.length})
+                  {dailyLog.length > 0 && (
+                    <button type="button" onClick={handleClearDailyLog} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.acc, background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                      Cancella diario ({dailyLog.length})
                     </button>
                   )}
-                  {extraEpisodes.length > 0 && (
-                    <span style={{ fontSize: "10px", color: col.grn, fontWeight: "600" }}>{extraEpisodes.length} episodi aggiunti manualmente</span>
+                  {dailyLog.length > 0 && (
+                    <span style={{ fontSize: "10px", color: col.grn, fontWeight: "600" }}>{dailyLog.length} registrazioni nel diario</span>
                   )}
                 </div>
               </form>
             </div>
 
-            {/* Episode table */}
+            {/* Daily log table */}
+            {dailyLog.length > 0 && (
             <div style={{ ...cardS, padding: 0, overflow: "hidden" }}>
+              <div style={{ padding: "14px 14px 8px", borderBottom: "1px solid " + col.bdr }}>
+                <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>Diario giornaliero ({dailyLog.length} registrazioni)</h3>
+              </div>
               <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                  <thead>
+                    <tr style={{ background: "#f2f1ee" }}>
+                      {["Data", "Gi.", "PA", "Peso", "Sonno", "Emicrania", "Note", ""].map(function (h) {
+                        return <th key={h} style={{ padding: "10px 8px", textAlign: "center", fontWeight: "600", color: col.mut, fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid " + col.bdr }}>{h}</th>;
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyLog.slice().reverse().map(function (entry, ri) {
+                      var origIdx = dailyLog.length - 1 - ri;
+                      var wd = calcWd(entry.date);
+                      return (
+                        <tr key={origIdx + "-" + entry.date} style={{ background: ri % 2 === 0 ? "#fff" : "#fafaf8" }}>
+                          <td style={{ padding: "7px 6px", fontWeight: "500", whiteSpace: "nowrap", textAlign: "center" }}>{fmtD(entry.date)}</td>
+                          <td style={{ padding: "7px 6px", textAlign: "center", color: wd === "Sab" ? col.acc : wd === "Lun" ? col.amb : col.mut, fontWeight: (wd === "Sab" || wd === "Lun") ? "600" : "400" }}>{wd}</td>
+                          <td style={{ padding: "7px 6px", textAlign: "center" }}>
+                            {entry.bp
+                              ? <span style={{ background: col.bluL, color: col.blu, padding: "1px 5px", borderRadius: "3px", fontSize: "11px", fontWeight: "600" }}>{entry.bp}</span>
+                              : "—"}
+                          </td>
+                          <td style={{ padding: "7px 6px", textAlign: "center", fontSize: "11px", color: col.grn, fontWeight: entry.kg ? "600" : "400" }}>{entry.kg ? entry.kg + " kg" : "—"}</td>
+                          <td style={{ padding: "7px 6px", textAlign: "center", fontSize: "11px" }}>
+                            {entry.sleepHours ? (
+                              <span>
+                                {entry.sleepHours}h
+                                {entry.sleepQuality && <span style={{ marginLeft: "3px", fontSize: "9px", padding: "1px 4px", borderRadius: "3px", background: entry.sleepQuality === "buona" ? col.grnL : entry.sleepQuality === "scarsa" ? col.accL : col.ambL, color: entry.sleepQuality === "buona" ? col.grn : entry.sleepQuality === "scarsa" ? col.acc : col.amb }}>{entry.sleepQuality}</span>}
+                              </span>
+                            ) : "—"}
+                          </td>
+                          <td style={{ padding: "7px 6px", textAlign: "center" }}>
+                            {entry.migraine ? (
+                              <span style={{ background: col.accL, color: col.acc, padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "600" }}>
+                                SI {entry.migraineTime ? entry.migraineTime : ""}
+                              </span>
+                            ) : <span style={{ color: col.mut }}>—</span>}
+                          </td>
+                          <td style={{ padding: "7px 6px", fontSize: "11px", color: col.mut, textAlign: "left", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.notes || "—"}</td>
+                          <td style={{ padding: "7px 6px", textAlign: "center" }}>
+                            <button onClick={function () { handleDeleteDailyEntry(origIdx); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.acc, background: "transparent", border: "1px solid " + col.acc + "40", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>X</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            )}
+
+            {/* Collapsible section: original episode history */}
+            <div style={cardS}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={function () { setShowStorico(!showStorico); }}>
+                <span style={{ fontSize: "14px", fontWeight: "600" }}>Storico episodi (dati originali)</span>
+                <span style={{ fontSize: "11px", color: col.mut }}>— {ep.length} episodi</span>
+                <span style={{ fontSize: "12px", color: col.blu, marginLeft: "auto" }}>{showStorico ? "Nascondi" : "Mostra"}</span>
+              </div>
+              {showStorico && (
+              <div style={{ marginTop: "12px", overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                   <thead>
                     <tr style={{ background: "#f2f1ee" }}>
@@ -1091,6 +1220,7 @@ export default function App() {
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
           </div>
         )}
