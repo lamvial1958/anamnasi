@@ -1021,7 +1021,14 @@ export default function App() {
 
             {/* Unified daily health log form */}
             <div style={cardS}>
-              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px" }}>Diario di Salute</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+                <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>Diario di Salute</h3>
+                {dailyLog.length > 0 && (
+                  <div style={{ fontSize: "11px", color: col.blu, background: col.bluL, padding: "4px 10px", borderRadius: "6px" }}>
+                    Ultimo inserimento: <strong>{fmtD(dailyLog.slice().sort(function (a, b) { return a.date > b.date ? -1 : 1; })[0].date)}</strong>
+                  </div>
+                )}
+              </div>
               <form onSubmit={handleAddDailyEntry} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {/* Row 1: Date, BP, Weight */}
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
