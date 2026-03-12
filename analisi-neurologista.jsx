@@ -313,8 +313,8 @@ export default function App() {
 
   const tabs = [
     ["timeline", "1. Timeline"], ["frequenza", "2. Frequenza"], ["heatmap", "3. Giorni/Sabati"],
-    ["pressione", "4. PA/Dieta"], ["orario", "5. Orario/Aura"], ["sintesi", "6. Sintesi Clinica"], ["farmaci", "7. Farmaci"], ["registro", "8. Registro"],
-    ["peso_sonno", "9. Peso/Sonno"]
+    ["pressione", "4. PA/Dieta"], ["orario", "5. Orario/Aura"], ["sintesi", "6. Sintesi Clinica"], ["farmaci", "7. Farmaci"],
+    ["peso_sonno", "8. Peso/Sonno"], ["registro", "9. Registro"]
   ];
 
   const workEps = detailed.filter(function (e) { return e.context && (e.context.toLowerCase().indexOf("lavor") >= 0 || e.context.toLowerCase().indexOf("computer") >= 0); });
