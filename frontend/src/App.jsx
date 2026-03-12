@@ -103,39 +103,7 @@ const defaultWeightData = [
 ];
 
 /* --- Sleep tracking data (Feature 4) --- */
-const defaultSleepData = [
-  { date: "2026-01-05", hours: 7.0, quality: "buona" },
-  { date: "2026-01-06", hours: 6.5, quality: "media" },
-  { date: "2026-01-08", hours: 5.5, quality: "scarsa" },
-  { date: "2026-01-10", hours: 7.5, quality: "buona" },
-  { date: "2026-01-12", hours: 6.0, quality: "media" },
-  { date: "2026-01-14", hours: 8.0, quality: "buona" },
-  { date: "2026-01-16", hours: 5.0, quality: "scarsa" },
-  { date: "2026-01-17", hours: 6.0, quality: "scarsa" },
-  { date: "2026-01-19", hours: 7.0, quality: "buona" },
-  { date: "2026-01-21", hours: 7.5, quality: "buona" },
-  { date: "2026-01-23", hours: 6.5, quality: "media" },
-  { date: "2026-01-26", hours: 5.5, quality: "scarsa" },
-  { date: "2026-01-28", hours: 7.0, quality: "media" },
-  { date: "2026-01-30", hours: 8.0, quality: "buona" },
-  { date: "2026-02-01", hours: 6.0, quality: "media" },
-  { date: "2026-02-02", hours: 5.5, quality: "scarsa" },
-  { date: "2026-02-05", hours: 7.5, quality: "buona" },
-  { date: "2026-02-08", hours: 7.0, quality: "buona" },
-  { date: "2026-02-10", hours: 6.0, quality: "scarsa" },
-  { date: "2026-02-11", hours: 5.5, quality: "scarsa" },
-  { date: "2026-02-14", hours: 6.5, quality: "media" },
-  { date: "2026-02-16", hours: 8.5, quality: "buona" },
-  { date: "2026-02-19", hours: 7.0, quality: "buona" },
-  { date: "2026-02-21", hours: 5.0, quality: "scarsa" },
-  { date: "2026-02-23", hours: 7.5, quality: "buona" },
-  { date: "2026-02-25", hours: 6.5, quality: "media" },
-  { date: "2026-02-28", hours: 6.0, quality: "media" },
-  { date: "2026-03-02", hours: 7.0, quality: "buona" },
-  { date: "2026-03-04", hours: 5.5, quality: "scarsa" },
-  { date: "2026-03-06", hours: 7.5, quality: "buona" },
-  { date: "2026-03-09", hours: 8.0, quality: "buona" },
-];
+const defaultSleepData = [];
 
 function fmtD(iso) {
   const [y, m, d] = iso.split("-");
