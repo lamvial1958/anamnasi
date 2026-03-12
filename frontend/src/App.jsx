@@ -369,7 +369,7 @@ export default function App() {
 
         {/* 4. PA/DIETA */}
         {tab === "pressione" && (function () {
-          var chartH = 220, chartPadL = 50, chartPadR = 20, chartPadT = 30, chartPadB = 50;
+          var chartH = 220, chartPadL = 55, chartPadR = 25, chartPadT = 35, chartPadB = 50;
           var bpSorted = bpEps.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
           var firstDate = new Date(bpSorted[0].date);
           var lastDate = new Date(bpSorted[bpSorted.length - 1].date);
@@ -379,7 +379,7 @@ export default function App() {
           var minV = Math.min(Math.min.apply(null, allD), 55);
           var maxV = Math.max(Math.max.apply(null, allS), 150);
           var range = maxV - minV || 1;
-          var innerW = 100;
+          var innerW = 600;
           function xPct(d) { return ((new Date(d) - firstDate) / totalMs) * 100; }
           function yPct(v) { return 100 - ((v - minV) / range) * 100; }
           var candesX = xPct(CANDESARTAN);
@@ -418,23 +418,23 @@ export default function App() {
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 4px" }}>Storico Pressione Arteriosa</h3>
               <div style={{ fontSize: "10px", color: col.mut, marginBottom: "14px" }}>Sistolica e diastolica durante episodi di emicrania con eventi correlati</div>
               <div style={{ position: "relative", width: "100%", height: chartH + chartPadT + chartPadB + "px", overflow: "visible" }}>
-                <svg viewBox={"0 0 " + (innerW + chartPadL + chartPadR) + " " + (chartH + chartPadT + chartPadB)} style={{ width: "100%", height: "100%", overflow: "visible" }} preserveAspectRatio="none">
+                <svg viewBox={"0 0 " + (innerW + chartPadL + chartPadR) + " " + (chartH + chartPadT + chartPadB)} style={{ width: "100%", height: "100%", overflow: "visible" }} preserveAspectRatio="xMidYMid meet">
                   {/* threshold lines */}
                   {thresholds.map(function (t) {
                     var yy = chartPadT + (yPct(t) / 100) * chartH;
-                    return <g key={t}><line x1={chartPadL} x2={chartPadL + innerW} y1={yy} y2={yy} stroke={t >= 140 ? col.acc + "40" : t >= 120 ? col.amb + "40" : col.grn + "40"} strokeDasharray="3,3" strokeWidth="0.5" /><text x={chartPadL - 3} y={yy + 1.5} textAnchor="end" fontSize="4" fill={col.mut}>{t}</text></g>;
+                    return <g key={t}><line x1={chartPadL} x2={chartPadL + innerW} y1={yy} y2={yy} stroke={t >= 140 ? col.acc + "40" : t >= 120 ? col.amb + "40" : col.grn + "40"} strokeDasharray="6,4" strokeWidth="1" /><text x={chartPadL - 6} y={yy + 4} textAnchor="end" fontSize="11" fill={col.mut}>{t}</text></g>;
                   })}
                   {/* Y-axis labels */}
-                  <text x={chartPadL - 3} y={chartPadT + 2} textAnchor="end" fontSize="4" fill={col.mut}>{maxV}</text>
-                  <text x={chartPadL - 3} y={chartPadT + chartH + 2} textAnchor="end" fontSize="4" fill={col.mut}>{minV}</text>
+                  <text x={chartPadL - 6} y={chartPadT + 4} textAnchor="end" fontSize="11" fill={col.mut}>{maxV}</text>
+                  <text x={chartPadL - 6} y={chartPadT + chartH + 4} textAnchor="end" fontSize="11" fill={col.mut}>{minV}</text>
 
                   {/* Candesartan start annotation */}
                   {(function () {
                     var cx = chartPadL + (candesX / 100) * innerW;
                     return <g>
-                      <line x1={cx} x2={cx} y1={chartPadT - 5} y2={chartPadT + chartH} stroke={col.blu} strokeDasharray="2,2" strokeWidth="0.6" />
-                      <rect x={cx - 16} y={chartPadT - 12} width="32" height="7" rx="1.5" fill={col.bluL} stroke={col.blu} strokeWidth="0.3" />
-                      <text x={cx} y={chartPadT - 7} textAnchor="middle" fontSize="3.5" fill={col.blu} fontWeight="600">Candesartan</text>
+                      <line x1={cx} x2={cx} y1={chartPadT - 10} y2={chartPadT + chartH} stroke={col.blu} strokeDasharray="5,3" strokeWidth="1.2" />
+                      <rect x={cx - 45} y={chartPadT - 28} width="90" height="20" rx="4" fill={col.bluL} stroke={col.blu} strokeWidth="0.8" />
+                      <text x={cx} y={chartPadT - 14} textAnchor="middle" fontSize="11" fill={col.blu} fontWeight="600">Candesartan</text>
                     </g>;
                   })()}
 
@@ -442,18 +442,18 @@ export default function App() {
                   {(function () {
                     var dx = chartPadL + (dietX / 100) * innerW;
                     return <g>
-                      <line x1={dx} x2={dx} y1={chartPadT - 5} y2={chartPadT + chartH} stroke={col.grn} strokeDasharray="2,2" strokeWidth="0.6" />
-                      <rect x={dx - 10} y={chartPadT - 12} width="20" height="7" rx="1.5" fill={col.grnL} stroke={col.grn} strokeWidth="0.3" />
-                      <text x={dx} y={chartPadT - 7} textAnchor="middle" fontSize="3.5" fill={col.grn} fontWeight="600">Dieta</text>
+                      <line x1={dx} x2={dx} y1={chartPadT - 10} y2={chartPadT + chartH} stroke={col.grn} strokeDasharray="5,3" strokeWidth="1.2" />
+                      <rect x={dx - 28} y={chartPadT - 28} width="56" height="20" rx="4" fill={col.grnL} stroke={col.grn} strokeWidth="0.8" />
+                      <text x={dx} y={chartPadT - 14} textAnchor="middle" fontSize="11" fill={col.grn} fontWeight="600">Dieta</text>
                     </g>;
                   })()}
 
                   {/* Systolic line */}
-                  <polyline fill="none" stroke={col.acc} strokeWidth="0.8" strokeLinejoin="round" points={bpSorted.map(function (e) {
+                  <polyline fill="none" stroke={col.acc} strokeWidth="2" strokeLinejoin="round" points={bpSorted.map(function (e) {
                     return (chartPadL + (xPct(e.date) / 100) * innerW) + "," + (chartPadT + (yPct(e.s) / 100) * chartH);
                   }).join(" ")} />
                   {/* Diastolic line */}
-                  <polyline fill="none" stroke={col.blu} strokeWidth="0.8" strokeLinejoin="round" points={bpSorted.map(function (e) {
+                  <polyline fill="none" stroke={col.blu} strokeWidth="2" strokeLinejoin="round" points={bpSorted.map(function (e) {
                     return (chartPadL + (xPct(e.date) / 100) * innerW) + "," + (chartPadT + (yPct(e.d) / 100) * chartH);
                   }).join(" ")} />
 
@@ -461,19 +461,19 @@ export default function App() {
                   {bpSorted.map(function (e, i) {
                     var cx = chartPadL + (xPct(e.date) / 100) * innerW;
                     var cy = chartPadT + (yPct(e.s) / 100) * chartH;
-                    return <circle key={"s" + i} cx={cx} cy={cy} r="1.5" fill={e.s >= 140 ? col.acc : e.s < 120 ? col.grn : col.amb} stroke="#fff" strokeWidth="0.4" />;
+                    return <circle key={"s" + i} cx={cx} cy={cy} r="4" fill={e.s >= 140 ? col.acc : e.s < 120 ? col.grn : col.amb} stroke="#fff" strokeWidth="1" />;
                   })}
                   {/* Diastolic dots */}
                   {bpSorted.map(function (e, i) {
                     var cx = chartPadL + (xPct(e.date) / 100) * innerW;
                     var cy = chartPadT + (yPct(e.d) / 100) * chartH;
-                    return <circle key={"d" + i} cx={cx} cy={cy} r="1.2" fill={col.blu} stroke="#fff" strokeWidth="0.3" />;
+                    return <circle key={"d" + i} cx={cx} cy={cy} r="3.5" fill={col.blu} stroke="#fff" strokeWidth="0.8" />;
                   })}
 
                   {/* X-axis date labels */}
                   {bpSorted.filter(function (_, i) { return i === 0 || i === bpSorted.length - 1 || i % Math.max(1, Math.floor(bpSorted.length / 6)) === 0; }).map(function (e, i) {
                     var cx = chartPadL + (xPct(e.date) / 100) * innerW;
-                    return <text key={"xl" + i} x={cx} y={chartPadT + chartH + 8} textAnchor="middle" fontSize="3.5" fill={col.mut}>{fmtD(e.date).slice(0, 5)}</text>;
+                    return <text key={"xl" + i} x={cx} y={chartPadT + chartH + 16} textAnchor="middle" fontSize="11" fill={col.mut}>{fmtD(e.date).slice(0, 5)}</text>;
                   })}
                 </svg>
               </div>
