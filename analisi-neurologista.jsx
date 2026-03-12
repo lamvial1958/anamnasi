@@ -1024,21 +1024,20 @@ export default function App() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
                 <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>Diario di Salute</h3>
                 {(function () {
-                  var lastDiary = dailyLog.length > 0 ? dailyLog.slice().sort(function (a, b) { return a.date > b.date ? -1 : 1; })[0].date : null;
+                  var bpDates = allEpisodes.filter(function (e) { return e.bp; }).map(function (e) { return e.date; })
+                    .concat(dailyLog.filter(function (e) { return e.bp; }).map(function (e) { return e.date; }));
+                  var lastBpDate = bpDates.length > 0 ? bpDates.sort().reverse()[0] : null;
                   var lastEpDate = allEpisodes.length > 0 ? allEpisodes[allEpisodes.length - 1].date : null;
                   var lastWeightDate = weightData.length > 0 ? weightData[weightData.length - 1].date : null;
-                  var dates = [lastDiary, lastEpDate, lastWeightDate].filter(Boolean);
-                  var lastDate = dates.length > 0 ? dates.sort().reverse()[0] : null;
-                  return lastDate ? (
+                  return (
                     <div style={{ fontSize: "11px", color: col.blu, background: col.bluL, padding: "6px 12px", borderRadius: "6px", lineHeight: "1.6" }}>
-                      {lastDiary && <span>Ultimo diario: <strong>{fmtD(lastDiary)}</strong></span>}
-                      {!lastDiary && <span style={{ color: col.amb }}>Nessun inserimento nel diario</span>}
+                      Ultima pressione: <strong>{lastBpDate ? fmtD(lastBpDate) : "—"}</strong>
                       <span style={{ color: col.mut }}> · </span>
                       Ultimo episodio: <strong>{lastEpDate ? fmtD(lastEpDate) : "—"}</strong>
                       <span style={{ color: col.mut }}> · </span>
                       Ultimo peso: <strong>{lastWeightDate ? fmtD(lastWeightDate) : "—"}</strong>
                     </div>
-                  ) : null;
+                  );
                 })()}
               </div>
               <form onSubmit={handleAddDailyEntry} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
