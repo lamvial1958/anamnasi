@@ -1,10 +1,10 @@
 # Roadmap - Dashboard Médico Neurológico
 
 ## Estado Atual
-- **Branch principal de desenvolvimento**: `claude/explain-codebase-mmm9affduv48ef7g-1yPzI`
-- **Arquivo principal**: `analisi-neurologista.jsx` (783 linhas, componente React completo)
-- **Frontend**: pasta `frontend/` com projeto Vite+React
-- **Merge local**: master já tem as alterações localmente, mas não foi possível fazer push remoto (restrição 403)
+- **Branch principal**: `main`
+- **Arquivo principal**: `analisi-neurologista.jsx` (componente React completo)
+- **Frontend**: pasta `frontend/` com projeto Vite+React (porta 5173)
+- **Merge e push**: concluídos em 11/03/2026
 
 ## Funcionalidades Implementadas
 - [x] 8 abas: timeline, frequenza, heatmap, pressione, orario, sintesi, farmaci, registro
@@ -16,29 +16,29 @@
 
 ## Próxima Sessão - Prioridades
 
-### 1. Merge para master e push remoto
-- Fazer `git checkout master && git merge claude/... && git push origin master`
-- Isso deve funcionar no Claude Code Desktop onde não há restrição de push para master
+### ~~1. Merge para master e push remoto~~ ✅ (concluído 11/03/2026)
 
-### 2. Visualização do Frontend
+### ~~2. Visualização do Frontend (Deploy)~~ ✅ (concluído 12/03/2026)
+- **URL**: https://anamnesivial.netlify.app
+- **Netlify**: projeto `anamnesivial`, build Vite configurado (base: `frontend`, publish: `frontend/dist`)
+- Deploy automático a cada push no `main`
 - O usuário ainda não conseguiu ver a aplicação no navegador
 - Opções a explorar:
   - **GitHub Pages**: deploy estático (grátis, acessível de qualquer lugar)
   - **Claude Code Desktop**: usar `npm run dev` com acesso direto ao localhost
   - **Netlify/Vercel**: deploy automático a cada push
 
-### 3. Sincronização de Arquivos
-- `frontend/src/App.jsx` é uma cópia de `analisi-neurologista.jsx`
-- Considerar: mover a fonte única para `frontend/src/App.jsx` e manter um symlink, ou usar um script de build
+### ~~3. Sincronização de Arquivos~~ ✅ (concluído 12/03/2026)
+- `analisi-neurologista.jsx` sincronizado como cópia de `frontend/src/App.jsx`
+- Fonte principal: `frontend/src/App.jsx`
 
-### 4. Melhorias Futuras (sugestões)
-- [ ] Correlação cruzada: gráfico sobrepondo episódios de enxaqueca + pressão arterial
-- [ ] Exportar relatório em PDF para levar ao neurologista
-- [ ] Adicionar tracking de peso (evolução com a dieta desde 05/01/2026)
-- [ ] Adicionar tracking de qualidade do sono
-- [ ] Modo escuro para facilitar leitura
-- [ ] Filtros por período nos gráficos
-- [ ] Formulário para adicionar novos episódios diretamente na interface
+### ~~4. Melhorias~~ ✅ (concluído 12/03/2026)
+- [x] Correlação cruzada: gráfico sobrepondo episódios + PA por mês (aba PA/Dieta)
+- [x] Exportar PDF: botão "Stampa / PDF" no header
+- [x] Tracking de peso: dados semanais desde início dieta (aba Peso/Sonno)
+- [x] Tracking de qualidade do sono: 31 registros com correlação (aba Peso/Sonno)
+- [x] Filtros por período: seletor de datas abaixo dos stats
+- [x] Formulário de entrada: no topo do Registro, com localStorage
 
 ## Dados do Paciente (referência)
 - **Início Candesartan**: 20/09/2025

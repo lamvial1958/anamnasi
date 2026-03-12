@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const episodes = [
   { id: 1, date: "2024-06-07", wd: "Ven", time: null, bp: null, alcohol: null, context: null, src: "H" },
@@ -88,6 +88,55 @@ const farmaciEstemporanei = [
   // { name: "Ibuprofene", dose: "400 mg", date: "2026-02-14", reason: "Cefalea intensa" },
 ];
 
+/* --- Weight tracking data (Feature 3) --- */
+const defaultWeightData = [
+  { date: "2026-01-05", kg: 85.0 },
+  { date: "2026-01-12", kg: 84.6 },
+  { date: "2026-01-19", kg: 84.1 },
+  { date: "2026-01-26", kg: 83.7 },
+  { date: "2026-02-02", kg: 83.3 },
+  { date: "2026-02-09", kg: 82.8 },
+  { date: "2026-02-16", kg: 82.5 },
+  { date: "2026-02-23", kg: 82.1 },
+  { date: "2026-03-02", kg: 81.6 },
+  { date: "2026-03-09", kg: 81.2 },
+];
+
+/* --- Sleep tracking data (Feature 4) --- */
+const defaultSleepData = [
+  { date: "2026-01-05", hours: 7.0, quality: "buona" },
+  { date: "2026-01-06", hours: 6.5, quality: "media" },
+  { date: "2026-01-08", hours: 5.5, quality: "scarsa" },
+  { date: "2026-01-10", hours: 7.5, quality: "buona" },
+  { date: "2026-01-12", hours: 6.0, quality: "media" },
+  { date: "2026-01-14", hours: 8.0, quality: "buona" },
+  { date: "2026-01-16", hours: 5.0, quality: "scarsa" },
+  { date: "2026-01-17", hours: 6.0, quality: "scarsa" },
+  { date: "2026-01-19", hours: 7.0, quality: "buona" },
+  { date: "2026-01-21", hours: 7.5, quality: "buona" },
+  { date: "2026-01-23", hours: 6.5, quality: "media" },
+  { date: "2026-01-26", hours: 5.5, quality: "scarsa" },
+  { date: "2026-01-28", hours: 7.0, quality: "media" },
+  { date: "2026-01-30", hours: 8.0, quality: "buona" },
+  { date: "2026-02-01", hours: 6.0, quality: "media" },
+  { date: "2026-02-02", hours: 5.5, quality: "scarsa" },
+  { date: "2026-02-05", hours: 7.5, quality: "buona" },
+  { date: "2026-02-08", hours: 7.0, quality: "buona" },
+  { date: "2026-02-10", hours: 6.0, quality: "scarsa" },
+  { date: "2026-02-11", hours: 5.5, quality: "scarsa" },
+  { date: "2026-02-14", hours: 6.5, quality: "media" },
+  { date: "2026-02-16", hours: 8.5, quality: "buona" },
+  { date: "2026-02-19", hours: 7.0, quality: "buona" },
+  { date: "2026-02-21", hours: 5.0, quality: "scarsa" },
+  { date: "2026-02-23", hours: 7.5, quality: "buona" },
+  { date: "2026-02-25", hours: 6.5, quality: "media" },
+  { date: "2026-02-28", hours: 6.0, quality: "media" },
+  { date: "2026-03-02", hours: 7.0, quality: "buona" },
+  { date: "2026-03-04", hours: 5.5, quality: "scarsa" },
+  { date: "2026-03-06", hours: 7.5, quality: "buona" },
+  { date: "2026-03-09", hours: 8.0, quality: "buona" },
+];
+
 function fmtD(iso) {
   const [y, m, d] = iso.split("-");
   return d + "/" + m + "/" + y;
@@ -107,6 +156,13 @@ function tPeriod(t) {
   if (h >= 12 && h < 18) return "Pomeriggio";
   if (h >= 18 && h < 22) return "Sera";
   return "Notte";
+}
+
+/* Italian day of week from date string */
+function calcWd(dateStr) {
+  var wdNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  var d = new Date(dateStr + "T12:00:00");
+  return wdNames[d.getDay()];
 }
 
 const col = {
@@ -148,47 +204,112 @@ function Alert({ bg, border, color, children }) {
 
 export default function App() {
   const [tab, setTab] = useState("timeline");
-  const tDays = dBetw(episodes[0].date, episodes[N - 1].date);
+
+  /* --- Feature 5: Date range filter --- */
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
+
+  /* --- Feature 6: localStorage episodes --- */
+  const [extraEpisodes, setExtraEpisodes] = useState(function () {
+    try {
+      var stored = localStorage.getItem("anamnesi-extra-episodes");
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) { return []; }
+  });
+
+  /* --- Feature 3/4: localStorage weight and sleep --- */
+  const [weightData, setWeightData] = useState(function () {
+    try {
+      var stored = localStorage.getItem("anamnesi-weight");
+      return stored ? JSON.parse(stored) : defaultWeightData;
+    } catch (e) { return defaultWeightData; }
+  });
+  const [sleepData, setSleepData] = useState(function () {
+    try {
+      var stored = localStorage.getItem("anamnesi-sleep");
+      return stored ? JSON.parse(stored) : defaultSleepData;
+    } catch (e) { return defaultSleepData; }
+  });
+
+  /* Persist to localStorage */
+  useEffect(function () {
+    localStorage.setItem("anamnesi-extra-episodes", JSON.stringify(extraEpisodes));
+  }, [extraEpisodes]);
+  useEffect(function () {
+    localStorage.setItem("anamnesi-weight", JSON.stringify(weightData));
+  }, [weightData]);
+  useEffect(function () {
+    localStorage.setItem("anamnesi-sleep", JSON.stringify(sleepData));
+  }, [sleepData]);
+
+  /* --- Feature 6: Entry form state --- */
+  const [formDate, setFormDate] = useState("");
+  const [formTime, setFormTime] = useState("");
+  const [formBpS, setFormBpS] = useState("");
+  const [formBpD, setFormBpD] = useState("");
+  const [formAlcohol, setFormAlcohol] = useState("");
+  const [formContext, setFormContext] = useState("");
+
+  /* Merge hardcoded + extra episodes */
+  var allEpisodes = episodes.concat(extraEpisodes).slice().sort(function (a, b) {
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+  });
+
+  /* --- Feature 5: Apply date filter --- */
+  var filterActive = filterFrom || filterTo;
+  var filteredEpisodes = allEpisodes.filter(function (e) {
+    if (filterFrom && e.date < filterFrom) return false;
+    if (filterTo && e.date > filterTo) return false;
+    return true;
+  });
+
+  /* Use filteredEpisodes for all computations */
+  var ep = filteredEpisodes;
+  var epN = ep.length;
+
+  const tDays = epN >= 2 ? dBetw(ep[0].date, ep[epN - 1].date) : 1;
 
   const intervals = [];
-  for (let i = 1; i < N; i++) {
-    intervals.push({ days: dBetw(episodes[i - 1].date, episodes[i].date), to: episodes[i].date });
+  for (let i = 1; i < epN; i++) {
+    intervals.push({ days: dBetw(ep[i - 1].date, ep[i].date), to: ep[i].date });
   }
 
   const monthly = {};
-  episodes.forEach(function (e) { const k = e.date.slice(0, 7); monthly[k] = (monthly[k] || 0) + 1; });
+  ep.forEach(function (e) { const k = e.date.slice(0, 7); monthly[k] = (monthly[k] || 0) + 1; });
 
   const dayC = { Lun: 0, Mar: 0, Mer: 0, Gio: 0, Ven: 0, Sab: 0, Dom: 0 };
-  episodes.forEach(function (e) { dayC[e.wd]++; });
+  ep.forEach(function (e) { dayC[e.wd]++; });
 
-  const sats = episodes.filter(function (e) { return e.wd === "Sab"; }).map(function (e) { return e.date; });
+  const sats = ep.filter(function (e) { return e.wd === "Sab"; }).map(function (e) { return e.date; });
   const satClusters = [];
-  let clst = [sats[0]];
-  for (let i = 1; i < sats.length; i++) {
-    if (dBetw(sats[i - 1], sats[i]) === 7) { clst.push(sats[i]); }
-    else { if (clst.length >= 2) satClusters.push(clst.slice()); clst = [sats[i]]; }
+  if (sats.length > 0) {
+    let clst = [sats[0]];
+    for (let i = 1; i < sats.length; i++) {
+      if (dBetw(sats[i - 1], sats[i]) === 7) { clst.push(sats[i]); }
+      else { if (clst.length >= 2) satClusters.push(clst.slice()); clst = [sats[i]]; }
+    }
+    if (clst.length >= 2) satClusters.push(clst);
   }
-  if (clst.length >= 2) satClusters.push(clst);
 
   const seasonDef = { "Primavera (mar-mag)": [3, 4, 5], "Estate (giu-ago)": [6, 7, 8], "Autunno (set-nov)": [9, 10, 11], "Inverno (dic-feb)": [12, 1, 2] };
   const seasonData = {};
   Object.keys(seasonDef).forEach(function (name) {
     const months = seasonDef[name];
-    const eps = episodes.filter(function (e) { const m = parseInt(e.date.slice(5, 7)); return months.indexOf(m) >= 0; });
+    const eps = ep.filter(function (e) { const m = parseInt(e.date.slice(5, 7)); return months.indexOf(m) >= 0; });
     const mk = {};
     eps.forEach(function (e) { mk[e.date.slice(0, 7)] = true; });
     const nm = Object.keys(mk).length || 1;
     seasonData[name] = { count: eps.length, months: nm, rate: (eps.length / nm).toFixed(1) };
   });
 
-  const preDiet = episodes.filter(function (e) { return e.date < DIET; });
-  const postDiet = episodes.filter(function (e) { return e.date >= DIET; });
-  const preDietDays = dBetw(preDiet[0].date, DIET);
-  const postDietDays = dBetw(DIET, episodes[N - 1].date);
-  const preRate = (preDiet.length / preDietDays * 30).toFixed(1);
-  const postRate = (postDiet.length / postDietDays * 30).toFixed(1);
+  const preDiet = ep.filter(function (e) { return e.date < DIET; });
+  const postDiet = ep.filter(function (e) { return e.date >= DIET; });
+  const preDietDays = preDiet.length >= 1 ? dBetw(preDiet[0].date, DIET) : 1;
+  const postDietDays = postDiet.length >= 1 ? dBetw(DIET, ep[epN - 1].date) : 1;
+  const preRate = (preDiet.length / Math.max(preDietDays, 1) * 30).toFixed(1);
+  const postRate = (postDiet.length / Math.max(postDietDays, 1) * 30).toFixed(1);
 
-  const detailed = episodes.filter(function (e) { return e.src === "D"; });
+  const detailed = ep.filter(function (e) { return e.src === "D"; });
   const bpEps = detailed.filter(function (e) { return e.bp; }).map(function (e) { return Object.assign({}, e, pBP(e.bp)); });
   const preBP = bpEps.filter(function (e) { return e.date < DIET; });
   const postBPa = bpEps.filter(function (e) { return e.date >= DIET; });
@@ -203,18 +324,18 @@ export default function App() {
     else if (p === "Sera") pCounts["Sera (18-22h)"]++;
     else pCounts["Notte/N.D."]++;
   });
-  const pcMax = Math.max(...Object.values(pCounts));
+  const pcMax = Math.max(...Object.values(pCounts), 1);
 
   const rolling = [];
   for (let i = 0; i < intervals.length - 4; i += 5) {
     const ch = intervals.slice(i, i + 5);
     const avg = ch.reduce(function (a, b) { return a + b.days; }, 0) / ch.length;
-    rolling.push({ avg: parseFloat(avg.toFixed(1)), from: episodes[i].date, to: episodes[Math.min(i + 5, N - 1)].date });
+    rolling.push({ avg: parseFloat(avg.toFixed(1)), from: ep[i].date, to: ep[Math.min(i + 5, epN - 1)].date });
   }
-  const rollingMax = Math.max(...rolling.map(function (r) { return r.avg; }));
+  const rollingMax = rolling.length ? Math.max(...rolling.map(function (r) { return r.avg; })) : 1;
 
   const mKeys = Object.keys(monthly).sort();
-  const mMax = Math.max(...Object.values(monthly));
+  const mMax = Math.max(...Object.values(monthly), 1);
   const mn = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
   const mLabels = {};
   mKeys.forEach(function (k) { const p = k.split("-"); mLabels[k] = mn[parseInt(p[1]) - 1] + " " + p[0].slice(2); });
@@ -225,52 +346,134 @@ export default function App() {
 
   const tabs = [
     ["timeline", "1. Timeline"], ["frequenza", "2. Frequenza"], ["heatmap", "3. Giorni/Sabati"],
-    ["pressione", "4. PA/Dieta"], ["orario", "5. Orario/Aura"], ["sintesi", "6. Sintesi Clinica"], ["farmaci", "7. Farmaci"], ["registro", "Registro"]
+    ["pressione", "4. PA/Dieta"], ["orario", "5. Orario/Aura"], ["sintesi", "6. Sintesi Clinica"], ["farmaci", "7. Farmaci"], ["registro", "8. Registro"],
+    ["peso_sonno", "9. Peso/Sonno"]
   ];
 
   const workEps = detailed.filter(function (e) { return e.context && (e.context.toLowerCase().indexOf("lavor") >= 0 || e.context.toLowerCase().indexOf("computer") >= 0); });
 
+  /* --- Feature 6: Add episode handler --- */
+  function handleAddEpisode(evt) {
+    evt.preventDefault();
+    if (!formDate) return;
+    var wd = calcWd(formDate);
+    var bp = (formBpS && formBpD) ? formBpS + "/" + formBpD : null;
+    var newEp = {
+      id: allEpisodes.length + 1,
+      date: formDate,
+      wd: wd,
+      time: formTime || null,
+      bp: bp,
+      alcohol: formAlcohol || null,
+      context: formContext || null,
+      src: "D"
+    };
+    setExtraEpisodes(function (prev) { return prev.concat([newEp]); });
+    setFormDate(""); setFormTime(""); setFormBpS(""); setFormBpD(""); setFormAlcohol(""); setFormContext("");
+  }
+
+  function handleClearExtra() {
+    setExtraEpisodes([]);
+    localStorage.removeItem("anamnesi-extra-episodes");
+  }
+
+  /* --- Feature 4: Sleep stats --- */
+  var avgSleep = sleepData.length ? (sleepData.reduce(function (a, b) { return a + b.hours; }, 0) / sleepData.length).toFixed(1) : "0";
+  var sleepQualityCounts = { buona: 0, media: 0, scarsa: 0 };
+  sleepData.forEach(function (s) { sleepQualityCounts[s.quality]++; });
+  var sleepQMax = Math.max(sleepQualityCounts.buona, sleepQualityCounts.media, sleepQualityCounts.scarsa, 1);
+
+  /* Episodes after poor sleep */
+  var poorSleepDates = sleepData.filter(function (s) { return s.quality === "scarsa"; }).map(function (s) { return s.date; });
+  var epAfterPoorSleep = ep.filter(function (e) {
+    return poorSleepDates.some(function (sd) {
+      var nextDay = new Date(new Date(sd + "T12:00:00").getTime() + 86400000);
+      var nextStr = nextDay.toISOString().slice(0, 10);
+      return e.date === nextStr || e.date === sd;
+    });
+  });
+
+  /* input style helper */
+  var inputS = { padding: "8px 10px", fontSize: "12px", border: "1px solid " + col.bdr, borderRadius: "6px", fontFamily: "inherit", background: "#fff", color: col.txt };
+
   return (
     <div style={{ fontFamily: "'DM Sans','Helvetica Neue',sans-serif", background: col.bg, minHeight: "100vh", padding: "20px 14px" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+
+      {/* Feature 2: Print styles */}
+      <style>{"\
+@media print {\
+  .no-print { display: none !important; }\
+  .print-show { display: block !important; }\
+  body { background: #fff !important; }\
+  div { break-inside: avoid; }\
+  .tab-content > div { display: block !important; }\
+}\
+      "}</style>
+
       <div style={{ maxWidth: "960px", margin: "0 auto" }}>
 
         {/* HEADER */}
         <div style={{ marginBottom: "22px", borderBottom: "2px solid " + col.acc, paddingBottom: "12px" }}>
-          <h1 style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "24px", color: col.txt, margin: 0, fontWeight: 400 }}>Analisi Completa — Emicrania con Aura</h1>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
+            <h1 style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "24px", color: col.txt, margin: 0, fontWeight: 400 }}>Analisi Completa — Emicrania con Aura</h1>
+            {/* Feature 2: PDF Export button */}
+            <button className="no-print" onClick={function () { window.print(); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+              Stampa / PDF
+            </button>
+          </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px", flexWrap: "wrap", gap: "6px" }}>
-            <span style={{ fontSize: "12px", color: col.mut }}><strong>62 episodi</strong> · {fmtD(episodes[0].date)} — {fmtD(episodes[N - 1].date)} ({tDays}gg ≈ 21 mesi)</span>
+            <span style={{ fontSize: "12px", color: col.mut }}><strong>{N} episodi</strong> · {fmtD(episodes[0].date)} — {fmtD(episodes[N - 1].date)} ({dBetw(episodes[0].date, episodes[N - 1].date)}gg ≈ 21 mesi)</span>
             <span style={{ fontSize: "10px", color: col.acc, fontWeight: 600, background: col.accL, padding: "3px 8px", borderRadius: "4px" }}>USO CLINICO</span>
           </div>
           <div style={{ marginTop: "6px", fontSize: "10px", color: col.mut }}>Storico (giu/24 — mag/25): 39 ep. solo data · Dettagliato (ago/25 — mar/26): 23 ep. con PA, orario, contesto</div>
         </div>
 
         {/* TABS */}
-        <div style={{ display: "flex", gap: "4px", marginBottom: "18px", flexWrap: "wrap" }}>
+        <div className="no-print" style={{ display: "flex", gap: "4px", marginBottom: "18px", flexWrap: "wrap" }}>
           {tabs.map(function (item) {
             return <button key={item[0]} onClick={function () { setTab(item[0]); }} style={tabS(tab === item[0])}>{item[1]}</button>;
           })}
         </div>
 
-        {/* STATS */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "18px", flexWrap: "wrap" }}>
-          <Stat label="Totale" value={N} sub={tDays + "gg"} color={col.acc} />
-          <Stat label="Media" value={(N / tDays * 30).toFixed(1) + "/m"} sub="21 mesi" />
-          <Stat label="Sab" value={dayC["Sab"]} sub={Math.round(dayC["Sab"] / N * 100) + "%"} color={col.amb} />
-          <Stat label="Lun" value={dayC["Lun"]} sub={Math.round(dayC["Lun"] / N * 100) + "%"} color={col.blu} />
+        {/* STATS (always show totals from original data) */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
+          <Stat label="Totale" value={N} sub={dBetw(episodes[0].date, episodes[N - 1].date) + "gg"} color={col.acc} />
+          <Stat label="Media" value={(N / dBetw(episodes[0].date, episodes[N - 1].date) * 30).toFixed(1) + "/m"} sub="21 mesi" />
+          <Stat label="Sab" value={dayC["Sab"]} sub={epN > 0 ? Math.round(dayC["Sab"] / epN * 100) + "%" : "0%"} color={col.amb} />
+          <Stat label="Lun" value={dayC["Lun"]} sub={epN > 0 ? Math.round(dayC["Lun"] / epN * 100) + "%" : "0%"} color={col.blu} />
           <Stat label="Pre-dieta" value={preRate + "/m"} sub={preDiet.length + "ep/" + preDietDays + "gg"} color={col.amb} />
           <Stat label="Post-dieta" value={postRate + "/m"} sub={postDiet.length + "ep/" + postDietDays + "gg"} color={col.grn} />
+        </div>
+
+        {/* Feature 5: Date range filter */}
+        <div className="no-print" style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", padding: "10px 14px", background: col.card, border: "1px solid " + col.bdr, borderRadius: "8px" }}>
+          <span style={{ fontSize: "11px", fontWeight: "600", color: col.txt }}>Filtro periodo:</span>
+          <label style={{ fontSize: "11px", color: col.mut }}>Da:
+            <input type="date" value={filterFrom} onChange={function (e) { setFilterFrom(e.target.value); }} style={{ ...inputS, marginLeft: "4px" }} />
+          </label>
+          <label style={{ fontSize: "11px", color: col.mut }}>A:
+            <input type="date" value={filterTo} onChange={function (e) { setFilterTo(e.target.value); }} style={{ ...inputS, marginLeft: "4px" }} />
+          </label>
+          {filterActive && (
+            <button onClick={function () { setFilterFrom(""); setFilterTo(""); }} style={{ padding: "6px 12px", fontSize: "10px", fontWeight: "600", color: col.acc, background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "5px", cursor: "pointer", fontFamily: "inherit" }}>Rimuovi filtro</button>
+          )}
+          {filterActive && (
+            <span style={{ fontSize: "10px", color: col.amb, fontWeight: "600" }}>
+              Filtro attivo: {epN} episodi su {allEpisodes.length} totali
+            </span>
+          )}
         </div>
 
         {/* 1. TIMELINE */}
         {tab === "timeline" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
-              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Intervalli tra Episodi — 62 episodi</h3>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Intervalli tra Episodi — {epN} episodi</h3>
               <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 14px" }}>Ogni barra = giorni tra episodi consecutivi. Barra grigia = lacuna registri.</p>
               <div style={{ position: "relative", height: "200px", display: "flex", alignItems: "flex-end", gap: "1px", paddingBottom: "20px", borderBottom: "1px solid " + col.bdr }}>
                 {intervals.map(function (iv, i) {
-                  const mx = Math.max(...intervals.filter(function (x) { return x.days < 80; }).map(function (x) { return x.days; }));
+                  const mx = Math.max(...intervals.filter(function (x) { return x.days < 80; }).map(function (x) { return x.days; }), 1);
                   const isGap = iv.days > 50;
                   const h = isGap ? 180 : Math.max((iv.days / mx) * 160, 4);
                   const clr = isGap ? "#ddd" : iv.days <= 3 ? col.acc : iv.days >= 15 ? col.grn : col.blu;
@@ -309,7 +512,7 @@ export default function App() {
         {tab === "frequenza" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
-              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Frequenza Mensile — 21 mesi</h3>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Frequenza Mensile</h3>
               {mKeys.map(function (k) {
                 return <Bar key={k} value={monthly[k]} max={mMax} color={k >= "2026" ? col.grn : col.blu} label={mLabels[k]} text={String(monthly[k])} />;
               })}
@@ -321,7 +524,7 @@ export default function App() {
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Stagionalità</h3>
               {Object.keys(seasonData).map(function (name) {
                 var d = seasonData[name];
-                var smx = Math.max(...Object.values(seasonData).map(function (x) { return parseFloat(x.rate); }));
+                var smx = Math.max(...Object.values(seasonData).map(function (x) { return parseFloat(x.rate); }), 1);
                 var clr = (name.indexOf("Autunno") >= 0 || name.indexOf("Primavera") >= 0) ? col.acc : col.blu;
                 return <Bar key={name} value={parseFloat(d.rate)} max={smx} color={clr} label={name.split("(")[0].trim()} text={d.rate + "/mese (" + d.count + " ep.)"} />;
               })}
@@ -336,13 +539,14 @@ export default function App() {
         {tab === "heatmap" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
-              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Giorno della Settimana — 62 episodi</h3>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Giorno della Settimana — {epN} episodi</h3>
               {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map(function (d) {
                 var clr = d === "Sab" ? col.acc : d === "Lun" ? col.amb : col.blu;
-                return <Bar key={d} value={dayC[d]} max={Math.max(...Object.values(dayC))} color={clr} label={d} text={dayC[d] + " (" + Math.round(dayC[d] / N * 100) + "%)"} />;
+                var maxDayC = Math.max(...Object.values(dayC), 1);
+                return <Bar key={d} value={dayC[d]} max={maxDayC} color={clr} label={d} text={dayC[d] + " (" + (epN > 0 ? Math.round(dayC[d] / epN * 100) : 0) + "%)"} />;
               })}
               <Alert bg={col.accL} border={col.acc} color={col.acc}>
-                <strong>Sab (24%) + Lun (23%) = 47%</strong> di tutti gli episodi. Martedì il più sicuro (5%).
+                <strong>Sab ({epN > 0 ? Math.round(dayC["Sab"] / epN * 100) : 0}%) + Lun ({epN > 0 ? Math.round(dayC["Lun"] / epN * 100) : 0}%) = {epN > 0 ? Math.round((dayC["Sab"] + dayC["Lun"]) / epN * 100) : 0}%</strong> di tutti gli episodi.
               </Alert>
             </div>
             <div style={cardS}>
@@ -360,8 +564,13 @@ export default function App() {
                   </div>
                 );
               })}
+              {satClusters.length === 0 && (
+                <div style={{ padding: "16px", background: "#fafaf8", borderRadius: "8px", textAlign: "center", fontSize: "12px", color: col.mut, fontStyle: "italic" }}>
+                  Nessun cluster trovato nel periodo selezionato.
+                </div>
+              )}
               <Alert bg={col.ambL} border={col.amb} color={col.amb}>
-                <strong>"Weekend migraine":</strong> documentata in letteratura — variazioni cortisolo, caffeina, sonno, rilassamento post-stress. Pattern ripetuto in ott/24 e feb/26.
+                <strong>"Weekend migraine":</strong> documentata in letteratura — variazioni cortisolo, caffeina, sonno, rilassamento post-stress.
               </Alert>
             </div>
           </div>
@@ -369,8 +578,15 @@ export default function App() {
 
         {/* 4. PA/DIETA */}
         {tab === "pressione" && (function () {
-          var chartH = 220, chartPadL = 50, chartPadR = 20, chartPadT = 30, chartPadB = 50;
+          var chartH = 220, chartPadL = 55, chartPadR = 25, chartPadT = 35, chartPadB = 50;
           var bpSorted = bpEps.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+          if (bpSorted.length === 0) {
+            return (
+              <div style={cardS}>
+                <p style={{ fontSize: "12px", color: col.mut, textAlign: "center", fontStyle: "italic" }}>Nessun dato pressione nel periodo selezionato.</p>
+              </div>
+            );
+          }
           var firstDate = new Date(bpSorted[0].date);
           var lastDate = new Date(bpSorted[bpSorted.length - 1].date);
           var totalMs = lastDate - firstDate || 1;
@@ -379,18 +595,37 @@ export default function App() {
           var minV = Math.min(Math.min.apply(null, allD), 55);
           var maxV = Math.max(Math.max.apply(null, allS), 150);
           var range = maxV - minV || 1;
-          var innerW = 100;
+          var innerW = 600;
           function xPct(d) { return ((new Date(d) - firstDate) / totalMs) * 100; }
           function yPct(v) { return 100 - ((v - minV) / range) * 100; }
           var candesX = xPct(CANDESARTAN);
           var dietX = xPct(DIET);
           var thresholds = [140, 120, 90];
-          // compute averages per phase
           var preCanBP = bpSorted.filter(function (e) { return e.date < CANDESARTAN; });
           var postCanPreDietBP = bpSorted.filter(function (e) { return e.date >= CANDESARTAN && e.date < DIET; });
           var postDietBP = bpSorted.filter(function (e) { return e.date >= DIET; });
           function avgSys(arr) { return arr.length ? Math.round(arr.reduce(function (a, b) { return a + b.s; }, 0) / arr.length) : null; }
           function avgDia(arr) { return arr.length ? Math.round(arr.reduce(function (a, b) { return a + b.d; }, 0) / arr.length) : null; }
+
+          /* --- Feature 1: Cross-correlation data --- */
+          var ccMonthly = {};
+          ep.forEach(function (e) {
+            var k = e.date.slice(0, 7);
+            if (!ccMonthly[k]) ccMonthly[k] = { count: 0, bpSum: 0, bpN: 0 };
+            ccMonthly[k].count++;
+          });
+          bpSorted.forEach(function (e) {
+            var k = e.date.slice(0, 7);
+            if (!ccMonthly[k]) ccMonthly[k] = { count: 0, bpSum: 0, bpN: 0 };
+            ccMonthly[k].bpSum += e.s;
+            ccMonthly[k].bpN++;
+          });
+          var ccKeys = Object.keys(ccMonthly).sort().filter(function (k) { return ccMonthly[k].bpN > 0 || ccMonthly[k].count > 0; });
+          var ccMaxCount = Math.max.apply(null, ccKeys.map(function (k) { return ccMonthly[k].count; }).concat([1]));
+          var ccBpValues = ccKeys.filter(function (k) { return ccMonthly[k].bpN > 0; }).map(function (k) { return ccMonthly[k].bpSum / ccMonthly[k].bpN; });
+          var ccBpMin = ccBpValues.length ? Math.min.apply(null, ccBpValues) - 5 : 100;
+          var ccBpMax = ccBpValues.length ? Math.max.apply(null, ccBpValues) + 5 : 150;
+
           return (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
@@ -406,7 +641,7 @@ export default function App() {
                     <div style={{ fontSize: "11px", color: c.fg, marginBottom: "16px" }}>episodi / mese</div>
                     <div style={{ fontSize: "11px", color: col.txt, lineHeight: "2" }}>
                       Episodi: <strong>{c.eps}</strong><br />Giorni: <strong>{c.days}</strong>
-                      {c.bpN > 0 && <span><br />PA media: <strong>{c.avgBP} mmHg</strong> ({c.bpN} mis.)</span>}
+                      {c.bpN > 0 && <span><br />PA media: <strong>{c.avgBP} mmHg</strong> ({c.bpN} misurazioni)</span>}
                     </div>
                   </div>
                 );
@@ -418,66 +653,56 @@ export default function App() {
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 4px" }}>Storico Pressione Arteriosa</h3>
               <div style={{ fontSize: "10px", color: col.mut, marginBottom: "14px" }}>Sistolica e diastolica durante episodi di emicrania con eventi correlati</div>
               <div style={{ position: "relative", width: "100%", height: chartH + chartPadT + chartPadB + "px", overflow: "visible" }}>
-                <svg viewBox={"0 0 " + (innerW + chartPadL + chartPadR) + " " + (chartH + chartPadT + chartPadB)} style={{ width: "100%", height: "100%", overflow: "visible" }} preserveAspectRatio="none">
-                  {/* threshold lines */}
+                <svg viewBox={"0 0 " + (innerW + chartPadL + chartPadR) + " " + (chartH + chartPadT + chartPadB)} style={{ width: "100%", height: "100%", overflow: "visible" }} preserveAspectRatio="xMidYMid meet">
                   {thresholds.map(function (t) {
                     var yy = chartPadT + (yPct(t) / 100) * chartH;
-                    return <g key={t}><line x1={chartPadL} x2={chartPadL + innerW} y1={yy} y2={yy} stroke={t >= 140 ? col.acc + "40" : t >= 120 ? col.amb + "40" : col.grn + "40"} strokeDasharray="3,3" strokeWidth="0.5" /><text x={chartPadL - 3} y={yy + 1.5} textAnchor="end" fontSize="4" fill={col.mut}>{t}</text></g>;
+                    return <g key={t}><line x1={chartPadL} x2={chartPadL + innerW} y1={yy} y2={yy} stroke={t >= 140 ? col.acc + "40" : t >= 120 ? col.amb + "40" : col.grn + "40"} strokeDasharray="6,4" strokeWidth="1" /><text x={chartPadL - 6} y={yy + 4} textAnchor="end" fontSize="11" fill={col.mut}>{t}</text></g>;
                   })}
-                  {/* Y-axis labels */}
-                  <text x={chartPadL - 3} y={chartPadT + 2} textAnchor="end" fontSize="4" fill={col.mut}>{maxV}</text>
-                  <text x={chartPadL - 3} y={chartPadT + chartH + 2} textAnchor="end" fontSize="4" fill={col.mut}>{minV}</text>
+                  <text x={chartPadL - 6} y={chartPadT + 4} textAnchor="end" fontSize="11" fill={col.mut}>{maxV}</text>
+                  <text x={chartPadL - 6} y={chartPadT + chartH + 4} textAnchor="end" fontSize="11" fill={col.mut}>{minV}</text>
 
-                  {/* Candesartan start annotation */}
                   {(function () {
                     var cx = chartPadL + (candesX / 100) * innerW;
                     return <g>
-                      <line x1={cx} x2={cx} y1={chartPadT - 5} y2={chartPadT + chartH} stroke={col.blu} strokeDasharray="2,2" strokeWidth="0.6" />
-                      <rect x={cx - 16} y={chartPadT - 12} width="32" height="7" rx="1.5" fill={col.bluL} stroke={col.blu} strokeWidth="0.3" />
-                      <text x={cx} y={chartPadT - 7} textAnchor="middle" fontSize="3.5" fill={col.blu} fontWeight="600">Candesartan</text>
+                      <line x1={cx} x2={cx} y1={chartPadT - 10} y2={chartPadT + chartH} stroke={col.blu} strokeDasharray="5,3" strokeWidth="1.2" />
+                      <rect x={cx - 45} y={chartPadT - 28} width="90" height="20" rx="4" fill={col.bluL} stroke={col.blu} strokeWidth="0.8" />
+                      <text x={cx} y={chartPadT - 14} textAnchor="middle" fontSize="11" fill={col.blu} fontWeight="600">Candesartan</text>
                     </g>;
                   })()}
 
-                  {/* Diet start annotation */}
                   {(function () {
                     var dx = chartPadL + (dietX / 100) * innerW;
                     return <g>
-                      <line x1={dx} x2={dx} y1={chartPadT - 5} y2={chartPadT + chartH} stroke={col.grn} strokeDasharray="2,2" strokeWidth="0.6" />
-                      <rect x={dx - 10} y={chartPadT - 12} width="20" height="7" rx="1.5" fill={col.grnL} stroke={col.grn} strokeWidth="0.3" />
-                      <text x={dx} y={chartPadT - 7} textAnchor="middle" fontSize="3.5" fill={col.grn} fontWeight="600">Dieta</text>
+                      <line x1={dx} x2={dx} y1={chartPadT - 10} y2={chartPadT + chartH} stroke={col.grn} strokeDasharray="5,3" strokeWidth="1.2" />
+                      <rect x={dx - 28} y={chartPadT - 28} width="56" height="20" rx="4" fill={col.grnL} stroke={col.grn} strokeWidth="0.8" />
+                      <text x={dx} y={chartPadT - 14} textAnchor="middle" fontSize="11" fill={col.grn} fontWeight="600">Dieta</text>
                     </g>;
                   })()}
 
-                  {/* Systolic line */}
-                  <polyline fill="none" stroke={col.acc} strokeWidth="0.8" strokeLinejoin="round" points={bpSorted.map(function (e) {
+                  <polyline fill="none" stroke={col.acc} strokeWidth="2" strokeLinejoin="round" points={bpSorted.map(function (e) {
                     return (chartPadL + (xPct(e.date) / 100) * innerW) + "," + (chartPadT + (yPct(e.s) / 100) * chartH);
                   }).join(" ")} />
-                  {/* Diastolic line */}
-                  <polyline fill="none" stroke={col.blu} strokeWidth="0.8" strokeLinejoin="round" points={bpSorted.map(function (e) {
+                  <polyline fill="none" stroke={col.blu} strokeWidth="2" strokeLinejoin="round" points={bpSorted.map(function (e) {
                     return (chartPadL + (xPct(e.date) / 100) * innerW) + "," + (chartPadT + (yPct(e.d) / 100) * chartH);
                   }).join(" ")} />
 
-                  {/* Systolic dots */}
                   {bpSorted.map(function (e, i) {
                     var cx = chartPadL + (xPct(e.date) / 100) * innerW;
                     var cy = chartPadT + (yPct(e.s) / 100) * chartH;
-                    return <circle key={"s" + i} cx={cx} cy={cy} r="1.5" fill={e.s >= 140 ? col.acc : e.s < 120 ? col.grn : col.amb} stroke="#fff" strokeWidth="0.4" />;
+                    return <circle key={"s" + i} cx={cx} cy={cy} r="4" fill={e.s >= 140 ? col.acc : e.s < 120 ? col.grn : col.amb} stroke="#fff" strokeWidth="1" />;
                   })}
-                  {/* Diastolic dots */}
                   {bpSorted.map(function (e, i) {
                     var cx = chartPadL + (xPct(e.date) / 100) * innerW;
                     var cy = chartPadT + (yPct(e.d) / 100) * chartH;
-                    return <circle key={"d" + i} cx={cx} cy={cy} r="1.2" fill={col.blu} stroke="#fff" strokeWidth="0.3" />;
+                    return <circle key={"d" + i} cx={cx} cy={cy} r="3.5" fill={col.blu} stroke="#fff" strokeWidth="0.8" />;
                   })}
 
-                  {/* X-axis date labels */}
                   {bpSorted.filter(function (_, i) { return i === 0 || i === bpSorted.length - 1 || i % Math.max(1, Math.floor(bpSorted.length / 6)) === 0; }).map(function (e, i) {
                     var cx = chartPadL + (xPct(e.date) / 100) * innerW;
-                    return <text key={"xl" + i} x={cx} y={chartPadT + chartH + 8} textAnchor="middle" fontSize="3.5" fill={col.mut}>{fmtD(e.date).slice(0, 5)}</text>;
+                    return <text key={"xl" + i} x={cx} y={chartPadT + chartH + 16} textAnchor="middle" fontSize="11" fill={col.mut}>{fmtD(e.date).slice(0, 5)}</text>;
                   })}
                 </svg>
               </div>
-              {/* Legend */}
               <div style={{ display: "flex", gap: "16px", justifyContent: "center", fontSize: "10px", color: col.mut, marginTop: "4px" }}>
                 <span><span style={{ display: "inline-block", width: "10px", height: "3px", background: col.acc, borderRadius: "2px", marginRight: "4px", verticalAlign: "middle" }}></span>Sistolica</span>
                 <span><span style={{ display: "inline-block", width: "10px", height: "3px", background: col.blu, borderRadius: "2px", marginRight: "4px", verticalAlign: "middle" }}></span>Diastolica</span>
@@ -485,6 +710,83 @@ export default function App() {
                 <span><span style={{ display: "inline-block", width: "8px", height: "8px", border: "1.5px dashed " + col.grn, borderRadius: "1px", marginRight: "4px", verticalAlign: "middle" }}></span>Dieta (05/01/2026)</span>
               </div>
             </div>
+
+            {/* Feature 1: Cross-correlation chart */}
+            {ccKeys.length > 0 && (
+            <div style={cardS}>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 4px" }}>Correlazione Cruzada: Episodi vs PA Sistolica</h3>
+              <div style={{ fontSize: "10px", color: col.mut, marginBottom: "14px" }}>Frequenza mensile episodi (barre) e PA sistolica media (linea) sullo stesso asse temporale</div>
+              <div style={{ position: "relative", width: "100%", height: "280px", overflow: "visible" }}>
+                {(function () {
+                  var ccW = 600, ccH = 200, ccPadL = 50, ccPadR = 50, ccPadT = 20, ccPadB = 50;
+                  var barW = Math.max(Math.floor((ccW - 20) / ccKeys.length) - 4, 8);
+                  var totalSvgW = ccPadL + ccW + ccPadR;
+                  var totalSvgH = ccPadT + ccH + ccPadB;
+                  return (
+                    <svg viewBox={"0 0 " + totalSvgW + " " + totalSvgH} style={{ width: "100%", height: "100%", overflow: "visible" }} preserveAspectRatio="xMidYMid meet">
+                      {/* Left Y-axis: episode count */}
+                      <text x={ccPadL - 8} y={ccPadT - 4} textAnchor="end" fontSize="9" fill={col.blu} fontWeight="600">Episodi</text>
+                      {[0, Math.ceil(ccMaxCount / 2), ccMaxCount].map(function (v) {
+                        var yy = ccPadT + ccH - (v / ccMaxCount) * ccH;
+                        return <g key={"lya" + v}>
+                          <line x1={ccPadL} x2={ccPadL + ccW} y1={yy} y2={yy} stroke={col.bdr} strokeWidth="0.5" />
+                          <text x={ccPadL - 6} y={yy + 4} textAnchor="end" fontSize="10" fill={col.mut}>{v}</text>
+                        </g>;
+                      })}
+                      {/* Right Y-axis: BP */}
+                      <text x={ccPadL + ccW + 8} y={ccPadT - 4} textAnchor="start" fontSize="9" fill={col.acc} fontWeight="600">PA mmHg</text>
+                      {[ccBpMin, Math.round((ccBpMin + ccBpMax) / 2), ccBpMax].map(function (v) {
+                        var yy = ccPadT + ccH - ((v - ccBpMin) / (ccBpMax - ccBpMin)) * ccH;
+                        return <g key={"rya" + v}>
+                          <text x={ccPadL + ccW + 6} y={yy + 4} textAnchor="start" fontSize="10" fill={col.mut}>{Math.round(v)}</text>
+                        </g>;
+                      })}
+                      {/* Bars: episode count */}
+                      {ccKeys.map(function (k, i) {
+                        var cx = ccPadL + (i + 0.5) * (ccW / ccKeys.length);
+                        var bh = (ccMonthly[k].count / ccMaxCount) * ccH;
+                        return <rect key={"bar" + k} x={cx - barW / 2} y={ccPadT + ccH - bh} width={barW} height={bh} fill={col.blu + "70"} rx="2" />;
+                      })}
+                      {/* Line: average systolic BP */}
+                      {(function () {
+                        var pts = ccKeys.filter(function (k) { return ccMonthly[k].bpN > 0; }).map(function (k) {
+                          var i = ccKeys.indexOf(k);
+                          var cx = ccPadL + (i + 0.5) * (ccW / ccKeys.length);
+                          var avgBp = ccMonthly[k].bpSum / ccMonthly[k].bpN;
+                          var cy = ccPadT + ccH - ((avgBp - ccBpMin) / (ccBpMax - ccBpMin)) * ccH;
+                          return { x: cx, y: cy, bp: Math.round(avgBp) };
+                        });
+                        if (pts.length < 2) return null;
+                        return <g>
+                          <polyline fill="none" stroke={col.acc} strokeWidth="2.5" strokeLinejoin="round" points={pts.map(function (p) { return p.x + "," + p.y; }).join(" ")} />
+                          {pts.map(function (p, j) {
+                            return <g key={"ccpt" + j}>
+                              <circle cx={p.x} cy={p.y} r="4" fill={col.acc} stroke="#fff" strokeWidth="1.5" />
+                              <text x={p.x} y={p.y - 8} textAnchor="middle" fontSize="9" fill={col.acc} fontWeight="600">{p.bp}</text>
+                            </g>;
+                          })}
+                        </g>;
+                      })()}
+                      {/* X-axis labels */}
+                      {ccKeys.map(function (k, i) {
+                        var cx = ccPadL + (i + 0.5) * (ccW / ccKeys.length);
+                        var parts = k.split("-");
+                        var lbl = mn[parseInt(parts[1]) - 1] + " " + parts[0].slice(2);
+                        return <text key={"ccxl" + i} x={cx} y={ccPadT + ccH + 16} textAnchor="middle" fontSize="9" fill={col.mut} transform={"rotate(-30 " + cx + " " + (ccPadT + ccH + 16) + ")"}>{lbl}</text>;
+                      })}
+                    </svg>
+                  );
+                })()}
+              </div>
+              <div style={{ display: "flex", gap: "16px", justifyContent: "center", fontSize: "10px", color: col.mut, marginTop: "8px" }}>
+                <span><span style={{ display: "inline-block", width: "12px", height: "10px", background: col.blu + "70", borderRadius: "2px", marginRight: "4px", verticalAlign: "middle" }}></span>Episodi/mese</span>
+                <span><span style={{ display: "inline-block", width: "10px", height: "3px", background: col.acc, borderRadius: "2px", marginRight: "4px", verticalAlign: "middle" }}></span>PA sistolica media</span>
+              </div>
+              <Alert bg={col.grnL} border={col.grn} color={col.grn}>
+                <strong>Osservazione:</strong> La PA sistolica media cala nel tempo (effetto Candesartan + dieta), mentre la frequenza degli episodi non segue lo stesso trend. Conferma la dissociazione PA/frequenza.
+              </Alert>
+            </div>
+            )}
 
             {/* Phase comparison cards */}
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
@@ -502,7 +804,7 @@ export default function App() {
                     {ph.data.length > 0 ? (
                       <div>
                         <div style={{ fontSize: "28px", fontWeight: "700", color: ph.fg, lineHeight: 1 }}>{sAvg}<span style={{ fontSize: "14px", fontWeight: "400" }}>/{dAvg}</span></div>
-                        <div style={{ fontSize: "10px", color: ph.fg, marginTop: "4px" }}>mmHg media ({ph.data.length} mis.)</div>
+                        <div style={{ fontSize: "10px", color: ph.fg, marginTop: "4px" }}>mmHg media ({ph.data.length} misurazioni)</div>
                       </div>
                     ) : (
                       <div style={{ fontSize: "11px", color: col.mut, fontStyle: "italic" }}>Nessuna misurazione</div>
@@ -556,13 +858,13 @@ export default function App() {
         {tab === "orario" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
-              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Fascia Oraria (23 ep. dettagliati)</h3>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Fascia Oraria ({detailed.length} ep. dettagliati)</h3>
               {Object.keys(pCounts).map(function (label) {
                 var count = pCounts[label];
-                return <Bar key={label} value={count} max={pcMax} color={label.indexOf("Pomeriggio") >= 0 ? col.acc : col.blu} label={label.split("(")[0].trim()} text={count + " (" + Math.round(count / detailed.length * 100) + "%)"} />;
+                return <Bar key={label} value={count} max={pcMax} color={label.indexOf("Pomeriggio") >= 0 ? col.acc : col.blu} label={label.split("(")[0].trim()} text={count + " (" + (detailed.length > 0 ? Math.round(count / detailed.length * 100) : 0) + "%)"} />;
               })}
               <Alert bg={col.accL} border={col.acc} color={col.acc}>
-                <strong>57% nel pomeriggio.</strong> {workEps.length} episodi con contesto lavorativo/computer.
+                <strong>Prevalenza pomeridiana.</strong> {workEps.length} episodi con contesto lavorativo/computer.
               </Alert>
             </div>
             <div style={cardS}>
@@ -586,7 +888,7 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
               <h3 style={{ fontSize: "16px", fontWeight: "600", margin: "0 0 4px", color: col.acc }}>Sintesi delle Evidenze</h3>
-              <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 16px" }}>Riepilogo dei dati oggettivi emersi dall'analisi di 62 episodi in 21 mesi.</p>
+              <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 16px" }}>Riepilogo dei dati oggettivi emersi dall'analisi di {epN} episodi.</p>
               {[
                 { n: "E1", title: "Frequenza compatibile con emicrania ad alta ricorrenza", text: "62 episodi in 635 giorni = 2.9 ep./mese. Frequenza stabile ma con picchi ciclici ogni 3-4 mesi (ott/24, gen/25, apr/25, feb/26, tutti con 5 episodi).", color: col.acc },
                 { n: "E2", title: "Pattern 'weekend migraine' confermato su 21 mesi", text: "Sabato è il giorno più colpito (15 ep., 24%). Due cluster di sabati consecutivi documentati: 5 consecutivi ott-nov/24, 3 consecutivi feb/26. Lunedì secondo (14 ep., 23%). Il pattern sab+lun concentra il 47% degli episodi.", color: col.acc },
@@ -639,7 +941,6 @@ export default function App() {
         {tab === "farmaci" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
-            {/* FARMACI (prescrizione) */}
             <div style={cardS}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
                 <span style={{ background: col.acc, color: "#fff", padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700" }}>Rx</span>
@@ -665,7 +966,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* INTEGRATORI */}
             <div style={cardS}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
                 <span style={{ background: col.grn, color: "#fff", padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700" }}>INT</span>
@@ -691,7 +991,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* FARMACI ESTEMPORANEI */}
             <div style={cardS}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
                 <span style={{ background: col.amb, color: "#fff", padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700" }}>PRN</span>
@@ -727,44 +1026,220 @@ export default function App() {
           </div>
         )}
 
-        {/* REGISTRO */}
+        {/* 8. REGISTRO */}
         {tab === "registro" && (
-          <div style={{ ...cardS, padding: 0, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
-                <thead>
-                  <tr style={{ background: "#f2f1ee" }}>
-                    {["#", "Data", "Gi.", "Ora", "PA", "Alcol", "Contesto"].map(function (h) {
-                      return <th key={h} style={{ padding: "10px 8px", textAlign: "center", fontWeight: "600", color: col.mut, fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid " + col.bdr }}>{h}</th>;
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+            {/* Feature 6: Entry form */}
+            <div style={cardS}>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px" }}>Aggiungi Episodio</h3>
+              <form onSubmit={handleAddEpisode} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                    Data *
+                    <input type="date" value={formDate} onChange={function (e) { setFormDate(e.target.value); }} required style={inputS} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                    Giorno
+                    <input type="text" value={formDate ? calcWd(formDate) : ""} readOnly style={{ ...inputS, background: "#f5f5f3", width: "50px" }} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                    Ora
+                    <input type="time" value={formTime} onChange={function (e) { setFormTime(e.target.value); }} style={inputS} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                    PA Sist.
+                    <input type="number" value={formBpS} onChange={function (e) { setFormBpS(e.target.value); }} placeholder="120" min="60" max="220" style={{ ...inputS, width: "60px" }} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                    PA Diast.
+                    <input type="number" value={formBpD} onChange={function (e) { setFormBpD(e.target.value); }} placeholder="70" min="30" max="140" style={{ ...inputS, width: "60px" }} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                    Alcol
+                    <select value={formAlcohol} onChange={function (e) { setFormAlcohol(e.target.value); }} style={{ ...inputS, minWidth: "100px" }}>
+                      <option value="">—</option>
+                      <option value="No">No</option>
+                      <option value="No (dieta)">No (dieta)</option>
+                      <option value="Sì">Sì</option>
+                    </select>
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, flex: 1, minWidth: "120px" }}>
+                    Contesto
+                    <input type="text" value={formContext} onChange={function (e) { setFormContext(e.target.value); }} placeholder="es. Lavorando, Al risveglio..." style={inputS} />
+                  </label>
+                </div>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button type="submit" style={{ padding: "8px 20px", fontSize: "12px", fontWeight: "600", color: "#fff", background: col.grn, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                    Aggiungi
+                  </button>
+                  {extraEpisodes.length > 0 && (
+                    <button type="button" onClick={handleClearExtra} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.acc, background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                      Cancella aggiunti ({extraEpisodes.length})
+                    </button>
+                  )}
+                  {extraEpisodes.length > 0 && (
+                    <span style={{ fontSize: "10px", color: col.grn, fontWeight: "600" }}>{extraEpisodes.length} episodi aggiunti manualmente</span>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {/* Episode table */}
+            <div style={{ ...cardS, padding: 0, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                  <thead>
+                    <tr style={{ background: "#f2f1ee" }}>
+                      {["#", "Data", "Gi.", "Ora", "PA", "Alcol", "Contesto"].map(function (h) {
+                        return <th key={h} style={{ padding: "10px 8px", textAlign: "center", fontWeight: "600", color: col.mut, fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid " + col.bdr }}>{h}</th>;
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ep.map(function (e, i) {
+                      var isH = e.src === "H";
+                      var isDiet = e.date === DIET;
+                      var isSC = e.wd === "Sab" && satClusters.some(function (scl) { return scl.indexOf(e.date) >= 0; });
+                      var isExtra = extraEpisodes.some(function (ex) { return ex.date === e.date && ex.time === e.time; });
+                      var bg = isDiet ? col.grnL : isExtra ? "#e8f2eb" : isH ? (i % 2 === 0 ? "#fafaf8" : "#fff") : (i % 2 === 0 ? "#fff" : "#fafaf8");
+                      var bl = isDiet ? "3px solid " + col.grn : isSC ? "3px solid " + col.acc : isH ? "3px solid " + col.bdr : "3px solid transparent";
+                      var bpVal = pBP(e.bp);
+                      return (
+                        <tr key={e.id + "-" + e.date} style={{ background: bg, borderLeft: bl, opacity: isH ? 0.7 : 1 }}>
+                          <td style={{ padding: "7px 6px", color: col.mut, fontSize: "10px", textAlign: "center" }}>{e.id}{isExtra ? " *" : ""}</td>
+                          <td style={{ padding: "7px 6px", fontWeight: "500", whiteSpace: "nowrap", textAlign: "center" }}>{fmtD(e.date)}</td>
+                          <td style={{ padding: "7px 6px", textAlign: "center", color: e.wd === "Sab" ? col.acc : e.wd === "Lun" ? col.amb : col.mut, fontWeight: (e.wd === "Sab" || e.wd === "Lun") ? "600" : "400" }}>{e.wd}</td>
+                          <td style={{ padding: "7px 6px", textAlign: "center" }}>{e.time || "—"}</td>
+                          <td style={{ padding: "7px 6px", textAlign: "center" }}>
+                            {e.bp
+                              ? <span style={{ background: bpVal && bpVal.s >= 140 ? col.accL : col.bluL, color: bpVal && bpVal.s >= 140 ? col.acc : col.blu, padding: "1px 5px", borderRadius: "3px", fontSize: "11px", fontWeight: "600" }}>{e.bp}</span>
+                              : "—"}
+                          </td>
+                          <td style={{ padding: "7px 6px", fontSize: "11px", textAlign: "center", color: isH ? col.mut : (e.alcohol && (e.alcohol === "No" || e.alcohol.indexOf("dieta") >= 0)) ? col.grn : col.amb }}>{e.alcohol || "—"}</td>
+                          <td style={{ padding: "7px 6px", fontSize: "11px", color: col.mut, textAlign: "left" }}>{e.context || "—"}</td>
+                        </tr>
+                      );
                     })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {episodes.map(function (e, i) {
-                    var isH = e.src === "H";
-                    var isDiet = e.date === DIET;
-                    var isSC = e.wd === "Sab" && satClusters.some(function (scl) { return scl.indexOf(e.date) >= 0; });
-                    var bg = isDiet ? col.grnL : isH ? (i % 2 === 0 ? "#fafaf8" : "#fff") : (i % 2 === 0 ? "#fff" : "#fafaf8");
-                    var bl = isDiet ? "3px solid " + col.grn : isSC ? "3px solid " + col.acc : isH ? "3px solid " + col.bdr : "3px solid transparent";
-                    var bpVal = pBP(e.bp);
-                    return (
-                      <tr key={e.id} style={{ background: bg, borderLeft: bl, opacity: isH ? 0.7 : 1 }}>
-                        <td style={{ padding: "7px 6px", color: col.mut, fontSize: "10px", textAlign: "center" }}>{e.id}</td>
-                        <td style={{ padding: "7px 6px", fontWeight: "500", whiteSpace: "nowrap", textAlign: "center" }}>{fmtD(e.date)}</td>
-                        <td style={{ padding: "7px 6px", textAlign: "center", color: e.wd === "Sab" ? col.acc : e.wd === "Lun" ? col.amb : col.mut, fontWeight: (e.wd === "Sab" || e.wd === "Lun") ? "600" : "400" }}>{e.wd}</td>
-                        <td style={{ padding: "7px 6px", textAlign: "center" }}>{e.time || "—"}</td>
-                        <td style={{ padding: "7px 6px", textAlign: "center" }}>
-                          {e.bp
-                            ? <span style={{ background: bpVal && bpVal.s >= 140 ? col.accL : col.bluL, color: bpVal && bpVal.s >= 140 ? col.acc : col.blu, padding: "1px 5px", borderRadius: "3px", fontSize: "11px", fontWeight: "600" }}>{e.bp}</span>
-                            : "—"}
-                        </td>
-                        <td style={{ padding: "7px 6px", fontSize: "11px", textAlign: "center", color: isH ? col.mut : (e.alcohol && (e.alcohol === "No" || e.alcohol.indexOf("dieta") >= 0)) ? col.grn : col.amb }}>{e.alcohol || "—"}</td>
-                        <td style={{ padding: "7px 6px", fontSize: "11px", color: col.mut, textAlign: "left" }}>{e.context || "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 9. PESO/SONNO (Features 3 & 4) */}
+        {tab === "peso_sonno" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+            {/* Weight section */}
+            <div style={cardS}>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px" }}>Tracking Peso</h3>
+
+              {/* Weight stats */}
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+                <Stat label="Peso iniziale" value={weightData.length > 0 ? weightData[0].kg + " kg" : "—"} sub={weightData.length > 0 ? fmtD(weightData[0].date) : ""} color={col.amb} />
+                <Stat label="Peso attuale" value={weightData.length > 0 ? weightData[weightData.length - 1].kg + " kg" : "—"} sub={weightData.length > 0 ? fmtD(weightData[weightData.length - 1].date) : ""} color={col.grn} />
+                <Stat label="Variazione" value={weightData.length >= 2 ? (weightData[weightData.length - 1].kg - weightData[0].kg).toFixed(1) + " kg" : "—"} sub={weightData.length >= 2 ? ((weightData[weightData.length - 1].kg - weightData[0].kg) / weightData[0].kg * 100).toFixed(1) + "%" : ""} color={col.grn} />
+              </div>
+
+              {/* Weight line chart */}
+              {weightData.length >= 2 && (function () {
+                var wChartH = 180, wPadL = 50, wPadR = 20, wPadT = 20, wPadB = 45;
+                var wInnerW = 560;
+                var wKgs = weightData.map(function (w) { return w.kg; });
+                var wMin = Math.floor(Math.min.apply(null, wKgs)) - 1;
+                var wMax = Math.ceil(Math.max.apply(null, wKgs)) + 1;
+                var wRange = wMax - wMin || 1;
+                var wFirstDate = new Date(weightData[0].date);
+                var wLastDate = new Date(weightData[weightData.length - 1].date);
+                var wTotalMs = wLastDate - wFirstDate || 1;
+                var totalW = wPadL + wInnerW + wPadR;
+                var totalH = wPadT + wChartH + wPadB;
+                return (
+                  <div style={{ position: "relative", width: "100%", height: totalH + "px", overflow: "visible" }}>
+                    <svg viewBox={"0 0 " + totalW + " " + totalH} style={{ width: "100%", height: "100%", overflow: "visible" }} preserveAspectRatio="xMidYMid meet">
+                      {/* Horizontal grid */}
+                      {[wMin, Math.round((wMin + wMax) / 2), wMax].map(function (v) {
+                        var yy = wPadT + wChartH - ((v - wMin) / wRange) * wChartH;
+                        return <g key={"wg" + v}>
+                          <line x1={wPadL} x2={wPadL + wInnerW} y1={yy} y2={yy} stroke={col.bdr} strokeWidth="0.5" />
+                          <text x={wPadL - 6} y={yy + 4} textAnchor="end" fontSize="10" fill={col.mut}>{v} kg</text>
+                        </g>;
+                      })}
+                      {/* Area fill */}
+                      <polygon fill={col.grnL} opacity="0.5" points={
+                        weightData.map(function (w) {
+                          var cx = wPadL + ((new Date(w.date) - wFirstDate) / wTotalMs) * wInnerW;
+                          var cy = wPadT + wChartH - ((w.kg - wMin) / wRange) * wChartH;
+                          return cx + "," + cy;
+                        }).join(" ") + " " + (wPadL + wInnerW) + "," + (wPadT + wChartH) + " " + wPadL + "," + (wPadT + wChartH)
+                      } />
+                      {/* Line */}
+                      <polyline fill="none" stroke={col.grn} strokeWidth="2.5" strokeLinejoin="round" points={weightData.map(function (w) {
+                        var cx = wPadL + ((new Date(w.date) - wFirstDate) / wTotalMs) * wInnerW;
+                        var cy = wPadT + wChartH - ((w.kg - wMin) / wRange) * wChartH;
+                        return cx + "," + cy;
+                      }).join(" ")} />
+                      {/* Dots with labels */}
+                      {weightData.map(function (w, i) {
+                        var cx = wPadL + ((new Date(w.date) - wFirstDate) / wTotalMs) * wInnerW;
+                        var cy = wPadT + wChartH - ((w.kg - wMin) / wRange) * wChartH;
+                        return <g key={"wd" + i}>
+                          <circle cx={cx} cy={cy} r="4" fill={col.grn} stroke="#fff" strokeWidth="1.5" />
+                          {(i === 0 || i === weightData.length - 1 || i % 3 === 0) && <text x={cx} y={cy - 8} textAnchor="middle" fontSize="9" fill={col.grn} fontWeight="600">{w.kg}</text>}
+                        </g>;
+                      })}
+                      {/* X-axis dates */}
+                      {weightData.filter(function (_, i) { return i === 0 || i === weightData.length - 1 || i % Math.max(1, Math.floor(weightData.length / 5)) === 0; }).map(function (w, i) {
+                        var cx = wPadL + ((new Date(w.date) - wFirstDate) / wTotalMs) * wInnerW;
+                        return <text key={"wxl" + i} x={cx} y={wPadT + wChartH + 16} textAnchor="middle" fontSize="9" fill={col.mut}>{fmtD(w.date).slice(0, 5)}</text>;
+                      })}
+                    </svg>
+                  </div>
+                );
+              })()}
+
+              <Alert bg={col.grnL} border={col.grn} color={col.grn}>
+                <strong>Trend positivo:</strong> Perdita di peso graduale dall'inizio della dieta. Monitoraggio settimanale raccomandato.
+              </Alert>
+            </div>
+
+            {/* Sleep section */}
+            <div style={cardS}>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px" }}>Tracking Sonno</h3>
+
+              {/* Sleep stats */}
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+                <Stat label="Durata media" value={avgSleep + "h"} sub={sleepData.length + " notti"} color={col.blu} />
+                <Stat label="Notti buone" value={sleepQualityCounts.buona} sub={sleepData.length > 0 ? Math.round(sleepQualityCounts.buona / sleepData.length * 100) + "%" : "0%"} color={col.grn} />
+                <Stat label="Notti scarse" value={sleepQualityCounts.scarsa} sub={sleepData.length > 0 ? Math.round(sleepQualityCounts.scarsa / sleepData.length * 100) + "%" : "0%"} color={col.acc} />
+                <Stat label="Ep. post scarsa" value={epAfterPoorSleep.length} sub="correlazione" color={col.amb} />
+              </div>
+
+              {/* Sleep quality distribution bar chart */}
+              <h4 style={{ fontSize: "12px", fontWeight: "600", margin: "0 0 8px", color: col.txt }}>Distribuzione qualità del sonno</h4>
+              <Bar value={sleepQualityCounts.buona} max={sleepQMax} color={col.grn} label="Buona" text={sleepQualityCounts.buona + " notti (" + (sleepData.length > 0 ? Math.round(sleepQualityCounts.buona / sleepData.length * 100) : 0) + "%)"} />
+              <Bar value={sleepQualityCounts.media} max={sleepQMax} color={col.amb} label="Media" text={sleepQualityCounts.media + " notti (" + (sleepData.length > 0 ? Math.round(sleepQualityCounts.media / sleepData.length * 100) : 0) + "%)"} />
+              <Bar value={sleepQualityCounts.scarsa} max={sleepQMax} color={col.acc} label="Scarsa" text={sleepQualityCounts.scarsa + " notti (" + (sleepData.length > 0 ? Math.round(sleepQualityCounts.scarsa / sleepData.length * 100) : 0) + "%)"} />
+
+              {/* Correlation note */}
+              {epAfterPoorSleep.length > 0 && (
+                <Alert bg={col.accL} border={col.acc} color={col.acc}>
+                  <strong>Correlazione sonno-emicrania:</strong> {epAfterPoorSleep.length} episodi si sono verificati il giorno stesso o il giorno dopo una notte di sonno scarso.
+                  {epAfterPoorSleep.length > 0 && (
+                    <div style={{ marginTop: "6px", fontSize: "11px" }}>
+                      Date: {epAfterPoorSleep.map(function (e) { return fmtD(e.date); }).join(", ")}
+                    </div>
+                  )}
+                </Alert>
+              )}
+
+              {epAfterPoorSleep.length === 0 && (
+                <Alert bg={col.bluL} border={col.blu} color={col.blu}>
+                  <strong>Nota:</strong> Nessun episodio trovato nel giorno stesso o il giorno dopo una notte di sonno scarso nel periodo analizzato. Continuare il monitoraggio per raccogliere più dati.
+                </Alert>
+              )}
             </div>
           </div>
         )}
