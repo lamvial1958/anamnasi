@@ -89,7 +89,17 @@ const farmaciEstemporanei = [
 ];
 
 /* --- Weight tracking data (Feature 3) --- */
-const defaultWeightData = [];
+const defaultWeightData = [
+  { date: "2026-01-19", kg: 130.0 },
+  { date: "2026-01-22", kg: 130.0 },
+  { date: "2026-01-25", kg: 124.6 },
+  { date: "2026-02-02", kg: 121.1 },
+  { date: "2026-02-08", kg: 118.65 },
+  { date: "2026-02-15", kg: 117.85 },
+  { date: "2026-02-22", kg: 117.05 },
+  { date: "2026-03-01", kg: 117.05 },
+  { date: "2026-03-08", kg: 115.05 },
+];
 
 /* --- Sleep tracking data (Feature 4) --- */
 const defaultSleepData = [];
