@@ -151,11 +151,15 @@ function Stat({ label, value, sub, color }) {
 
 function Bar({ value, max, color, label, text }) {
   const w = Math.max((value / max) * 100, 6);
+  const narrow = w < 30;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "7px" }}>
-      <div style={{ width: "100px", fontSize: "12px", color: col.mut, textAlign: "right" }}>{label}</div>
-      <div style={{ flex: 1, background: col.bdr, borderRadius: "5px", height: "26px", overflow: "hidden" }}>
-        <div style={{ width: w + "%", height: "100%", background: color, borderRadius: "5px", display: "flex", alignItems: "center", paddingLeft: "8px", fontSize: "11px", fontWeight: "600", color: "#fff" }}>{text}</div>
+      <div style={{ width: "100px", fontSize: "12px", color: col.mut, textAlign: "right", flexShrink: 0 }}>{label}</div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "6px" }}>
+        <div style={{ flex: 1, background: col.bdr, borderRadius: "5px", height: "26px", position: "relative" }}>
+          <div style={{ width: w + "%", height: "100%", background: color, borderRadius: "5px", display: "flex", alignItems: "center", paddingLeft: narrow ? 0 : "8px", fontSize: "11px", fontWeight: "600", color: "#fff", whiteSpace: "nowrap" }}>{!narrow && text}</div>
+        </div>
+        {narrow && <span style={{ fontSize: "11px", fontWeight: "600", color: color, whiteSpace: "nowrap" }}>{text}</span>}
       </div>
     </div>
   );
@@ -325,7 +329,7 @@ export default function App() {
   };
 
   const tabs = [
-    ["timeline", "1. Timeline"], ["frequenza", "2. Frequenza"], ["heatmap", "3. Giorni/Sabati"],
+    ["timeline", "1. Timeline"], ["frequenza", "2. Frequenza"], ["heatmap", "3. Giorni"],
     ["pressione", "4. PA/Dieta"], ["orario", "5. Orario/Aura"], ["sintesi", "6. Sintesi Clinica"], ["farmaci", "7. Farmaci"],
     ["peso_sonno", "8. Peso/Sonno"], ["registro", "9. Registro"]
   ];
@@ -491,7 +495,7 @@ export default function App() {
                 return <Bar key={i} value={r.avg} max={rollingMax} color={r.avg <= 7 ? col.acc : r.avg >= 15 ? col.grn : col.blu} label={label} text={r.avg + "gg"} />;
               })}
               <Alert bg={col.accL} border={col.acc} color={col.acc}>
-                <strong>Pattern ciclico:</strong> picchi di alta intensità (≤7gg) in ott-nov/24, mar-mag/25, gen-mar/26. Oscillazione ~4-5 mesi.
+                <strong>Andamento ciclico:</strong> picchi di alta intensità (≤7gg) in ott-nov/24, mar-mag/25, gen-mar/26. Oscillazione ~4-5 mesi.
               </Alert>
             </div>
           </div>
@@ -859,7 +863,7 @@ export default function App() {
             <div style={cardS}>
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Caratteristiche dell'Aura</h3>
               <div style={{ padding: "12px", background: col.bluL, borderRadius: "8px", marginBottom: "12px", fontSize: "12px", lineHeight: "1.7", borderLeft: "3px solid " + col.blu }}>
-                <strong>Pattern abituale:</strong> l'aura si presenta senza preferenza di lato. Inizia tipicamente come un'aura completa, ragionevolmente centralizzata nel campo visivo. Solo in casi molto specifici si manifesta lateralmente, senza preferenza per alcun emisfero.
+                <strong>Schema abituale:</strong> l'aura si presenta senza preferenza di lato. Inizia tipicamente come un'aura completa, ragionevolmente centralizzata nel campo visivo. Solo in casi molto specifici si manifesta lateralmente, senza preferenza per alcun emisfero.
               </div>
               <div style={{ padding: "10px 12px", background: col.ambL, borderRadius: "8px", marginBottom: "8px", borderLeft: "3px solid " + col.amb, fontSize: "12px" }}>
                 <strong>16/11/2025</strong> — Aura apparsa e scomparsa 4 volte — lavorando al computer (atipico per ripetizione)
@@ -867,7 +871,7 @@ export default function App() {
               <div style={{ padding: "10px 12px", background: col.accL, borderRadius: "8px", marginBottom: "8px", borderLeft: "3px solid " + col.acc, fontSize: "12px" }}>
                 <strong>21/02/2026</strong> — Aura lato sinistro — sabato pomeriggio (atipico per lateralizzazione)
               </div>
-              <div style={{ fontSize: "11px", color: col.mut, fontStyle: "italic" }}>Entrambi sono eccezioni al pattern abituale centralizzato.</div>
+              <div style={{ fontSize: "11px", color: col.mut, fontStyle: "italic" }}>Entrambi sono eccezioni allo schema abituale centralizzato.</div>
             </div>
           </div>
         )}
@@ -880,11 +884,11 @@ export default function App() {
               <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 16px" }}>Riepilogo dei dati oggettivi emersi dall'analisi di {epN} episodi.</p>
               {[
                 { n: "E1", title: "Frequenza compatibile con emicrania ad alta ricorrenza", text: "62 episodi in 635 giorni = 2.9 ep./mese. Frequenza stabile ma con picchi ciclici ogni 3-4 mesi (ott/24, gen/25, apr/25, feb/26, tutti con 5 episodi).", color: col.acc },
-                { n: "E2", title: "Pattern 'weekend migraine' confermato su 21 mesi", text: "Sabato è il giorno più colpito (15 ep., 24%). Due cluster di sabati consecutivi documentati: 5 consecutivi ott-nov/24, 3 consecutivi feb/26. Lunedì secondo (14 ep., 23%). Il pattern sab+lun concentra il 47% degli episodi.", color: col.acc },
+                { n: "E2", title: "Ricorrenza 'weekend migraine' confermata su 21 mesi", text: "Sabato è il giorno più colpito (15 ep., 24%). Due cluster di sabati consecutivi documentati: 5 consecutivi ott-nov/24, 3 consecutivi feb/26. Lunedì secondo (14 ep., 23%). La ricorrenza sab+lun concentra il 47% degli episodi.", color: col.acc },
                 { n: "E3", title: "Stagionalità autunno-primavera", text: "Tasso in autunno e primavera: 3.5 ep./mese. Estate: 2.2 ep./mese. Ottobre è il mese con maggiore incidenza storica (8 episodi nei due anni).", color: col.amb },
                 { n: "E4", title: "Dissociazione pressione arteriosa / frequenza", text: "La dieta (no alcol, no dolci, dal 05/01/2026) ha ridotto la PA sistolica media da ~127 a ~112 mmHg (−12%), ma la frequenza è aumentata da 2.7 a 5.2 ep./mese. L'alcol e i dolci non risultano trigger primari.", color: col.grn },
                 { n: "E5", title: "Prevalenza pomeridiana e correlazione lavorativa", text: "57% degli episodi dettagliati (13/23) avviene tra 12-18h. 6 episodi hanno contesto esplicito di lavoro/computer. Possibile ruolo di postura, affaticamento visivo, luminosità schermo.", color: col.blu },
-                { n: "E6", title: "Episodi atipici dell'aura", text: "Pattern abituale: aura centralizzata, senza preferenza di lato. Due eccezioni documentate: 16/11/2025 (aura x4, apparsa/scomparsa ripetutamente) e 21/02/2026 (aura lateralizzata a sinistra).", color: col.amb },
+                { n: "E6", title: "Episodi atipici dell'aura", text: "Schema abituale: aura centralizzata, senza preferenza di lato. Due eccezioni documentate: 16/11/2025 (aura x4, apparsa/scomparsa ripetutamente) e 21/02/2026 (aura lateralizzata a sinistra).", color: col.amb },
               ].map(function (item, i) {
                 return (
                   <div key={i} style={{ padding: "14px", borderRadius: "8px", marginBottom: "10px", borderLeft: "4px solid " + item.color, background: i % 2 === 0 ? "#fafaf8" : "#fff" }}>
@@ -921,7 +925,7 @@ export default function App() {
             </div>
 
             <div style={{ background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "10px", padding: "16px", fontSize: "12px", color: col.acc }}>
-              <strong>Disclaimer:</strong> Questo documento è un registro di raccolta dati con analisi statistica descrittiva. Le ipotesi presentate sono basate sui pattern osservati e su riferimenti alla letteratura medica, ma l'interpretazione clinica e la diagnosi sono di competenza esclusiva del medico specialista.
+              <strong>Disclaimer:</strong> Questo documento è un registro di raccolta dati con analisi statistica descrittiva. Le ipotesi presentate sono basate sugli andamenti osservati e su riferimenti alla letteratura medica, ma l'interpretazione clinica e la diagnosi sono di competenza esclusiva del medico specialista.
             </div>
           </div>
         )}
