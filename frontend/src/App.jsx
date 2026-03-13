@@ -551,7 +551,7 @@ export default function App() {
                     <div style={{ fontSize: "13px", fontWeight: "600", color: col.acc, marginBottom: "4px" }}>{scl.length} sabati consecutivi</div>
                     <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                       {scl.map(function (d, j) {
-                        return <span key={j} style={{ background: "#fff", padding: "3px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "500" }}>{fmtD(d)}</span>;
+                        return <span key={j} style={{ background: "#fff", color: col.txt, padding: "3px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "500" }}>{fmtD(d)}</span>;
                       })}
                     </div>
                   </div>
@@ -832,7 +832,7 @@ export default function App() {
 
             <div style={{ ...cardS, background: col.accL, borderColor: col.acc + "40" }}>
               <h3 style={{ fontSize: "13px", fontWeight: "600", color: col.acc, margin: "0 0 8px" }}>Dissociazione PA / Frequenza</h3>
-              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "12px", lineHeight: "1.7" }}>
+              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "12px", lineHeight: "1.7", color: col.txt }}>
                 <div style={{ flex: 1, minWidth: "180px" }}>
                   <div style={{ color: col.grn, fontWeight: "600" }}>✓ PA ridotta</div>
                   Media da {avgPreBP} a {avgPostBP} mmHg (−{avgPreBP - avgPostBP} mmHg).
@@ -862,13 +862,13 @@ export default function App() {
             </div>
             <div style={cardS}>
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Caratteristiche dell'Aura</h3>
-              <div style={{ padding: "12px", background: col.bluL, borderRadius: "8px", marginBottom: "12px", fontSize: "12px", lineHeight: "1.7", borderLeft: "3px solid " + col.blu }}>
+              <div style={{ padding: "12px", background: col.bluL, borderRadius: "8px", marginBottom: "12px", fontSize: "12px", lineHeight: "1.7", borderLeft: "3px solid " + col.blu, color: col.txt }}>
                 <strong>Schema abituale:</strong> l'aura si presenta senza preferenza di lato. Inizia tipicamente come un'aura completa, ragionevolmente centralizzata nel campo visivo. Solo in casi molto specifici si manifesta lateralmente, senza preferenza per alcun emisfero.
               </div>
-              <div style={{ padding: "10px 12px", background: col.ambL, borderRadius: "8px", marginBottom: "8px", borderLeft: "3px solid " + col.amb, fontSize: "12px" }}>
+              <div style={{ padding: "10px 12px", background: col.ambL, borderRadius: "8px", marginBottom: "8px", borderLeft: "3px solid " + col.amb, fontSize: "12px", color: col.txt }}>
                 <strong>16/11/2025</strong> — Aura apparsa e scomparsa 4 volte — lavorando al computer (atipico per ripetizione)
               </div>
-              <div style={{ padding: "10px 12px", background: col.accL, borderRadius: "8px", marginBottom: "8px", borderLeft: "3px solid " + col.acc, fontSize: "12px" }}>
+              <div style={{ padding: "10px 12px", background: col.accL, borderRadius: "8px", marginBottom: "8px", borderLeft: "3px solid " + col.acc, fontSize: "12px", color: col.txt }}>
                 <strong>21/02/2026</strong> — Aura lato sinistro — sabato pomeriggio (atipico per lateralizzazione)
               </div>
               <div style={{ fontSize: "11px", color: col.mut, fontStyle: "italic" }}>Entrambi sono eccezioni allo schema abituale centralizzato.</div>
