@@ -1156,8 +1156,8 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {dailyLog.slice().reverse().map(function (entry, ri) {
-                      var origIdx = dailyLog.length - 1 - ri;
+                    {dailyLog.slice().sort(function (a, b) { return a.date > b.date ? -1 : a.date < b.date ? 1 : 0; }).map(function (entry, ri) {
+                      var origIdx = dailyLog.indexOf(entry);
                       var wd = calcWd(entry.date);
                       return (
                         <tr key={origIdx + "-" + entry.date} style={{ background: ri % 2 === 0 ? "#fff" : "#fafaf8" }}>
