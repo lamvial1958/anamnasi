@@ -221,7 +221,7 @@ export default function App() {
   ).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
 
   /* --- Unified form state --- */
-  const [formDate, setFormDate] = useState("");
+  const [formDate, setFormDate] = useState(new Date().toISOString().slice(0, 10));
   const [formBpS, setFormBpS] = useState("");
   const [formBpD, setFormBpD] = useState("");
   const [formKg, setFormKg] = useState("");
@@ -1161,7 +1161,7 @@ export default function App() {
                       var wd = calcWd(entry.date);
                       return (
                         <tr key={origIdx + "-" + entry.date} style={{ background: ri % 2 === 0 ? "#fff" : "#fafaf8" }}>
-                          <td style={{ padding: "7px 6px", fontWeight: "500", whiteSpace: "nowrap", textAlign: "center" }}>{fmtD(entry.date)}</td>
+                          <td style={{ padding: "7px 6px", fontWeight: "500", whiteSpace: "nowrap", textAlign: "center", color: col.txt, fontSize: "11px" }}>{fmtD(entry.date)}</td>
                           <td style={{ padding: "7px 6px", textAlign: "center", color: wd === "Sab" ? col.acc : wd === "Lun" ? col.amb : col.mut, fontWeight: (wd === "Sab" || wd === "Lun") ? "600" : "400" }}>{wd}</td>
                           <td style={{ padding: "7px 6px", textAlign: "center" }}>
                             {entry.bp
