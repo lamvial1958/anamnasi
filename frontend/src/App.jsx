@@ -189,10 +189,35 @@ export default function App() {
     } catch (e) { return []; }
   });
 
-  /* Persist daily log to localStorage */
+  /* Persist daily log to localStorage + auto-backup */
   useEffect(function () {
     localStorage.setItem("anamnesi-daily-log", JSON.stringify(dailyLog));
   }, [dailyLog]);
+
+  function autoBackup(log, analysis) {
+    var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: log || dailyLog, analysis: analysis || analysisResult };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "anamnesi-backup.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function handleImportBackup(evt) {
+    var file = evt.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
+        if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
+        alert("Backup importato: " + (data.dailyLog ? data.dailyLog.length : 0) + " registrazioni, analisi " + (data.analysis ? "presente" : "assente") + ".");
+      } catch (err) { alert("Errore nel file di backup: " + err.message); }
+    };
+    reader.readAsText(file);
+  }
 
   /* --- Derive data from daily log --- */
   var extraEpisodes = dailyLog.filter(function (entry) { return entry.migraine; }).map(function (entry, i) {
@@ -361,12 +386,16 @@ export default function App() {
       alcohol: formMigraine ? (formAlcohol || null) : null,
       notes: formNotes || null
     };
+    var newLog;
     if (editingIdx !== null) {
-      setDailyLog(function (prev) { return prev.map(function (e, i) { return i === editingIdx ? entry : e; }); });
+      newLog = dailyLog.map(function (e, i) { return i === editingIdx ? entry : e; });
+      setDailyLog(newLog);
       setEditingIdx(null);
     } else {
-      setDailyLog(function (prev) { return prev.concat([entry]); });
+      newLog = dailyLog.concat([entry]);
+      setDailyLog(newLog);
     }
+    autoBackup(newLog, null);
     setFormDate(""); setFormBpS(""); setFormBpD(""); setFormKg(""); setFormSleepHours(""); setFormSleepQuality("");
     setFormMigraine(false); setFormTime(""); setFormContext(""); setFormAlcohol(""); setFormNotes("");
   }
@@ -394,7 +423,9 @@ export default function App() {
   }
 
   function handleDeleteDailyEntry(idx) {
-    setDailyLog(function (prev) { return prev.filter(function (_, i) { return i !== idx; }); });
+    var newLog = dailyLog.filter(function (_, i) { return i !== idx; });
+    setDailyLog(newLog);
+    autoBackup(newLog, null);
   }
 
   function runAnalysis() {
@@ -552,6 +583,7 @@ export default function App() {
 
     setAnalysisResult(result);
     localStorage.setItem("anamnesi-analysis", JSON.stringify(result));
+    autoBackup(null, result);
   }
 
   function handleClearDailyLog() {
@@ -610,6 +642,20 @@ export default function App() {
           </div>
           <div style={{ marginTop: "6px", fontSize: "10px", color: col.mut }}>Storico (giu/24 — mag/25): 39 ep. solo data · Dettagliato (ago/25 — mar/26): 23 ep. con PA, orario, contesto</div>
         </div>
+
+        {/* Restore banner - shown when localStorage is empty but backup might exist */}
+        {dailyLog.length === 0 && !analysisResult && (
+          <div className="no-print" style={{ marginBottom: "14px", padding: "14px 18px", background: col.ambL, border: "1px solid " + col.amb + "40", borderRadius: "10px", borderLeft: "4px solid " + col.amb, display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: "200px" }}>
+              <div style={{ fontSize: "13px", fontWeight: "600", color: col.amb, marginBottom: "4px" }}>Nessun dato nel diario</div>
+              <div style={{ fontSize: "11px", color: col.txt }}>Se hai un backup precedente (<code>anamnesi-backup.json</code>), importalo per recuperare i tuoi dati.</div>
+            </div>
+            <label style={{ padding: "8px 18px", fontSize: "12px", fontWeight: "600", color: "#fff", background: col.amb, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+              Importa backup
+              <input type="file" accept=".json" onChange={handleImportBackup} style={{ display: "none" }} />
+            </label>
+          </div>
+        )}
 
         {/* TABS */}
         <div className="no-print" style={{ display: "flex", gap: "4px", marginBottom: "18px", flexWrap: "wrap" }}>
@@ -1428,6 +1474,25 @@ export default function App() {
               </div>
             </div>
             )}
+
+            {/* Backup / Restore */}
+            <div style={cardS}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <div>
+                  <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 4px" }}>Backup dati</h3>
+                  <p style={{ fontSize: "11px", color: col.mut, margin: 0 }}>Il backup viene scaricato automaticamente ad ogni modifica. Qui puoi esportare/importare manualmente.</p>
+                </div>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button type="button" onClick={function () { autoBackup(null, null); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                    Esporta JSON
+                  </button>
+                  <label style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.grn, background: col.grnL, border: "1px solid " + col.grn + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                    Importa JSON
+                    <input type="file" accept=".json" onChange={handleImportBackup} style={{ display: "none" }} />
+                  </label>
+                </div>
+              </div>
+            </div>
 
             {/* Collapsible section: original episode history */}
             <div style={cardS}>
