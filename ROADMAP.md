@@ -43,8 +43,18 @@
 - **Suplementos**: Magnésio, Vitamina B2, Coenzima Q10, Aura Stop
 - **Medicação**: Candesartan 8mg, Zolmitriptano 2.5mg (resgate)
 
+### ~~5. Sincronização Cloud (GitHub)~~ ✅ (concluído 15/03/2026)
+- [x] Módulo `frontend/src/githubSync.js` para read/write via GitHub Contents API
+- [x] Ao abrir o app: carrega dados do GitHub se mais recentes que localStorage
+- [x] A cada mudança de dados: push automático (debounced 2s) para GitHub
+- [x] Ao fechar o app: backup final via keepalive fetch
+- [x] UI na aba 9. Registro: config de token, status de sync, sincronização manual
+- [x] Multi-dispositivo: PC, celular, tablet — mesmos dados em qualquer lugar
+- [x] Token: Fine-grained PAT com permissão Contents (Read and write), expira 15/03/2027
+
 ## Notas Técnicas
 - React JSX com estilos inline (sem CSS framework, sem biblioteca de gráficos)
 - SVG customizado para todos os gráficos
 - Projeto Vite para desenvolvimento local
-- Dados hardcoded no componente (sem backend/banco de dados)
+- Dados em localStorage + sync automático com GitHub (backup cloud)
+- `frontend/src/githubSync.js` — módulo de sincronização via GitHub Contents API
