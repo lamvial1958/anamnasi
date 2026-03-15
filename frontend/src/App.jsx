@@ -198,20 +198,26 @@ export default function App() {
   function autoBackup(log, analysis, estemporanei) {
     var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: log || dailyLog, analysis: analysis || analysisResult, farmaciEstemporanei: estemporanei || prnMeds };
     var json = JSON.stringify(data, null, 2);
+    localStorage.setItem("anamnesi-backup-full", json);
     fetch("/api/save-backup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: json
-    }).then(function (r) {
-      if (!r.ok) throw new Error("API non disponibile");
-    }).catch(function () {
-      var blob = new Blob([json], { type: "application/json" });
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "anamnesi-backup.json";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
+    }).catch(function () { /* API non disponibile — backup già salvato in localStorage */ });
+  }
+
+  function exportBackup() {
+    var json = localStorage.getItem("anamnesi-backup-full");
+    if (!json) {
+      var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: dailyLog, analysis: analysisResult, farmaciEstemporanei: prnMeds };
+      json = JSON.stringify(data, null, 2);
+    }
+    var blob = new Blob([json], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "anamnesi-backup.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   function handleImportBackup(evt) {
@@ -1580,7 +1586,7 @@ export default function App() {
                   <p style={{ fontSize: "11px", color: col.mut, margin: 0 }}>Il backup viene salvato automaticamente nella cartella del programma. Qui puoi esportare/importare manualmente.</p>
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <button type="button" onClick={function () { autoBackup(null, null); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                  <button type="button" onClick={exportBackup} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
                     Esporta JSON
                   </button>
                   <label style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.grn, background: col.grnL, border: "1px solid " + col.grn + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
