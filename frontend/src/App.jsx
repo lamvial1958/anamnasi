@@ -345,7 +345,7 @@ export default function App() {
       } else {
         setGhSyncMsg("Dati locali più recenti — verrà fatto upload");
       }
-      var now = new Date().toISOString().slice(0, 16).replace("T", " ");
+      var now = new Date().toLocaleString("it-IT", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
       setGhLastSync(now);
       localStorage.setItem("anamnesi-github-lastsync", now);
       setGhSyncStatus("ok");
@@ -364,7 +364,7 @@ export default function App() {
       setGhSyncMsg("Salvando su GitHub...");
       saveToGitHub(backupData, ghShaRef.current).then(function (newSha) {
         ghShaRef.current = newSha;
-        var now = new Date().toISOString().slice(0, 16).replace("T", " ");
+        var now = new Date().toLocaleString("it-IT", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
         setGhLastSync(now);
         localStorage.setItem("anamnesi-github-lastsync", now);
         setGhSyncStatus("ok");
@@ -389,7 +389,7 @@ export default function App() {
       var cfg = getConfig();
       var encoded = btoa(unescape(encodeURIComponent(json)));
       var body = JSON.stringify({
-        message: "Auto-backup (chiusura) " + new Date().toISOString().slice(0, 16).replace("T", " "),
+        message: "Auto-backup (chiusura) " + new Date().toLocaleString("it-IT", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
         content: encoded,
         sha: ghShaRef.current || undefined,
       });
@@ -1738,7 +1738,7 @@ export default function App() {
                             if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
                             localStorage.setItem("anamnesi-backup-full", JSON.stringify(data));
                           }
-                          var now = new Date().toISOString().slice(0, 16).replace("T", " ");
+                          var now = new Date().toLocaleString("it-IT", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
                           setGhLastSync(now);
                           localStorage.setItem("anamnesi-github-lastsync", now);
                           setGhSyncStatus("ok");
@@ -1794,7 +1794,7 @@ export default function App() {
                             var data = JSON.parse(currentBackup);
                             pushToGitHub(data);
                           }
-                          var now = new Date().toISOString().slice(0, 16).replace("T", " ");
+                          var now = new Date().toLocaleString("it-IT", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
                           setGhLastSync(now);
                           localStorage.setItem("anamnesi-github-lastsync", now);
                         }).catch(function (err) {
