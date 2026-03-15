@@ -235,6 +235,9 @@ export default function App() {
   const [formNotes, setFormNotes] = useState("");
   const [editingIdx, setEditingIdx] = useState(null);
   const [showStorico, setShowStorico] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(function () {
+    try { var stored = localStorage.getItem("anamnesi-analysis"); return stored ? JSON.parse(stored) : null; } catch (e) { return null; }
+  });
 
   /* Merge hardcoded + extra episodes */
   var allEpisodes = episodes.concat(extraEpisodes).slice().sort(function (a, b) {
@@ -392,6 +395,163 @@ export default function App() {
 
   function handleDeleteDailyEntry(idx) {
     setDailyLog(function (prev) { return prev.filter(function (_, i) { return i !== idx; }); });
+  }
+
+  function runAnalysis() {
+    var now = new Date().toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    var totalDays = epN >= 2 ? dBetw(ep[0].date, ep[epN - 1].date) : 1;
+    var ratePerMonth = (epN / Math.max(totalDays, 1) * 30).toFixed(1);
+
+    /* E1: Frequency & peaks */
+    var monthlyPeaks = Object.keys(monthly).filter(function (k) { return monthly[k] >= 4; }).sort(function (a, b) { return monthly[b] - monthly[a]; });
+    var peakStr = monthlyPeaks.length > 0
+      ? "Picchi: " + monthlyPeaks.map(function (k) { return mLabels[k] + " (" + monthly[k] + ")"; }).join(", ") + "."
+      : "Nessun mese con ≥4 episodi.";
+    var e1 = epN + " episodi in " + totalDays + " giorni = " + ratePerMonth + " ep./mese. " + peakStr;
+
+    /* E2: Weekend migraine */
+    var satCount = dayC["Sab"] || 0;
+    var lunCount = dayC["Lun"] || 0;
+    var satPct = epN > 0 ? Math.round(satCount / epN * 100) : 0;
+    var lunPct = epN > 0 ? Math.round(lunCount / epN * 100) : 0;
+    var wkendPct = epN > 0 ? Math.round((satCount + lunCount) / epN * 100) : 0;
+    var clusterStr = satClusters.length > 0
+      ? satClusters.map(function (cl) { return cl.length + " consecutivi (" + fmtD(cl[0]) + " — " + fmtD(cl[cl.length - 1]) + ")"; }).join("; ")
+      : "Nessun cluster rilevato";
+    var e2 = "Sabato: " + satCount + " ep. (" + satPct + "%). Lunedì: " + lunCount + " ep. (" + lunPct + "%). Sab+Lun concentra il " + wkendPct + "% degli episodi. Cluster sabati: " + clusterStr + ".";
+
+    /* E3: Seasonality */
+    var seasonEntries = Object.keys(seasonData).map(function (k) { return { name: k, data: seasonData[k] }; });
+    var maxSeason = seasonEntries.reduce(function (a, b) { return parseFloat(a.data.rate) > parseFloat(b.data.rate) ? a : b; });
+    var minSeason = seasonEntries.reduce(function (a, b) { return parseFloat(a.data.rate) < parseFloat(b.data.rate) ? a : b; });
+    var monthlyArr = Object.keys(monthly).map(function (k) { return { month: k, count: monthly[k] }; });
+    var topMonth = monthlyArr.length > 0 ? monthlyArr.sort(function (a, b) { return b.count - a.count; })[0] : null;
+    var e3 = "Stagione più colpita: " + maxSeason.name + " (" + maxSeason.data.rate + " ep./mese). Meno colpita: " + minSeason.name + " (" + minSeason.data.rate + " ep./mese)."
+      + (topMonth ? " Mese storico peggiore: " + mLabels[topMonth.month] + " (" + topMonth.count + " episodi)." : "");
+
+    /* E4: BP / Diet dissociation */
+    var bpChange = avgPreBP > 0 && avgPostBP > 0 ? Math.round((avgPostBP - avgPreBP) / avgPreBP * 100) : 0;
+    var e4 = "Pre-dieta (" + fmtD(preDiet.length > 0 ? preDiet[0].date : DIET) + " — " + fmtD(DIET) + "): " + preDiet.length + " ep., " + preRate + " ep./mese, PA media " + avgPreBP + " mmHg. "
+      + "Post-dieta (" + fmtD(DIET) + " — " + fmtD(ep.length > 0 ? ep[epN - 1].date : DIET) + "): " + postDiet.length + " ep., " + postRate + " ep./mese, PA media " + avgPostBP + " mmHg (" + (bpChange >= 0 ? "+" : "") + bpChange + "%). "
+      + (parseFloat(postRate) > parseFloat(preRate) ? "La dieta ridusse la PA ma la frequenza è aumentata → alcol/dolci non sono trigger primari." : "La dieta ha ridotto sia la PA che la frequenza.");
+
+    /* E5: Time of day & work */
+    var afternoonCount = pCounts["Pomeriggio (12-18h)"] || 0;
+    var afternoonPct = detailed.length > 0 ? Math.round(afternoonCount / detailed.length * 100) : 0;
+    var eveningCount = pCounts["Sera (18-22h)"] || 0;
+    var morningCount = pCounts["Mattina (5-12h)"] || 0;
+    var e5 = "Episodi dettagliati: " + detailed.length + ". Pomeriggio (12-18h): " + afternoonCount + " (" + afternoonPct + "%). "
+      + "Mattina: " + morningCount + ", Sera: " + eveningCount + ". "
+      + "Episodi con contesto lavoro/computer: " + workEps.length + "."
+      + (afternoonPct >= 50 ? " Prevalenza pomeridiana suggerisce ruolo di affaticamento visivo/posturale cumulativo." : "");
+
+    /* E6: Aura patterns */
+    var auraEps = detailed.filter(function (e) { return e.context && e.context.toLowerCase().indexOf("aura") >= 0; });
+    var e6 = auraEps.length > 0
+      ? "Episodi con aura documentata: " + auraEps.length + ". " + auraEps.map(function (e) { return fmtD(e.date) + ": " + e.context; }).join("; ") + "."
+      : "Nessun episodio con aura esplicitamente documentato nel contesto.";
+
+    /* Cross-correlations: Sleep × Migraine */
+    var sleepCorr = null;
+    if (sleepData.length >= 3) {
+      var migDates = {};
+      ep.forEach(function (e) { migDates[e.date] = true; });
+      var sleepOnMigDays = sleepData.filter(function (s) { return migDates[s.date]; });
+      var sleepOnNormDays = sleepData.filter(function (s) { return !migDates[s.date]; });
+      var avgSleepMig = sleepOnMigDays.length > 0 ? (sleepOnMigDays.reduce(function (a, b) { return a + b.hours; }, 0) / sleepOnMigDays.length).toFixed(1) : null;
+      var avgSleepNorm = sleepOnNormDays.length > 0 ? (sleepOnNormDays.reduce(function (a, b) { return a + b.hours; }, 0) / sleepOnNormDays.length).toFixed(1) : null;
+      var badSleepMig = sleepOnMigDays.filter(function (s) { return s.quality === "scarsa"; }).length;
+      var badSleepNorm = sleepOnNormDays.filter(function (s) { return s.quality === "scarsa"; }).length;
+      sleepCorr = {
+        migDays: sleepOnMigDays.length, normDays: sleepOnNormDays.length,
+        avgMig: avgSleepMig, avgNorm: avgSleepNorm,
+        badMig: badSleepMig, badNorm: badSleepNorm
+      };
+    }
+
+    /* Cross-correlations: Weight × Migraine */
+    var weightCorr = null;
+    if (weightData.length >= 3) {
+      var firstW = weightData[0];
+      var lastW = weightData[weightData.length - 1];
+      var wChange = (lastW.kg - firstW.kg).toFixed(1);
+      var wPct = ((lastW.kg - firstW.kg) / firstW.kg * 100).toFixed(1);
+      /* Compare episode rate in periods of higher vs lower weight */
+      var medianKg = weightData[Math.floor(weightData.length / 2)].kg;
+      weightCorr = {
+        first: firstW.kg, last: lastW.kg, change: wChange, pct: wPct,
+        firstDate: fmtD(firstW.date), lastDate: fmtD(lastW.date), median: medianKg
+      };
+    }
+
+    /* Cross-correlations: Context triggers */
+    var contextMap = {};
+    detailed.forEach(function (e) {
+      if (e.context) {
+        var ctx = e.context.toLowerCase().trim();
+        if (ctx) { contextMap[ctx] = (contextMap[ctx] || 0) + 1; }
+      }
+    });
+    var topContexts = Object.keys(contextMap).map(function (k) { return { ctx: k, count: contextMap[k] }; })
+      .sort(function (a, b) { return b.count - a.count; }).slice(0, 5);
+
+    /* Build hypotheses dynamically */
+    var hypotheses = [];
+    if (wkendPct >= 35) {
+      hypotheses.push({ id: "H1", title: "Emicrania da rilassamento (let-down migraine)", text: "Sab+Lun concentrano " + wkendPct + "% degli episodi. Meccanismo probabile: cortisolo elevato in settimana → calo brusco al sabato → vasodilatazione → trigger. Lunedì potrebbe essere il rimbalzo dello stress. Rif.: Lipton et al., Neurology, 2014.", color: col.acc });
+    }
+    if (parseFloat(maxSeason.data.rate) >= parseFloat(minSeason.data.rate) * 1.3) {
+      hypotheses.push({ id: "H2", title: "Trigger ambientale stagionale", text: maxSeason.name + " ha tasso " + maxSeason.data.rate + " ep./mese vs " + minSeason.name + " con " + minSeason.data.rate + ". Variazioni di luce, pressione atmosferica e temperatura sono trigger noti per emicrania con aura.", color: col.amb });
+    }
+    if (afternoonPct >= 40 && workEps.length >= 3) {
+      hypotheses.push({ id: "H3", title: "Componente posturale/visiva occupazionale", text: afternoonPct + "% degli episodi è pomeridiano con " + workEps.length + " correlati a lavoro/computer. Possibile ruolo di affaticamento visivo cumulativo, postura mantenuta e luce blu.", color: col.blu });
+    }
+    if (parseFloat(postRate) >= parseFloat(preRate)) {
+      hypotheses.push({ id: "H4", title: "Esclusione del trigger alimentare", text: "Post-dieta: frequenza " + postRate + " ep./mese (era " + preRate + "). L'eliminazione di alcol e dolci non ha ridotto la frequenza, suggerendo che non sono trigger primari. La PA è migliorata indipendentemente.", color: col.grn });
+    }
+    if (auraEps.length >= 2) {
+      hypotheses.push({ id: "H5", title: "Monitorare progressione dell'aura", text: auraEps.length + " episodi con aura documentata. Valutare con la neurologista se pattern atipici richiedono approfondimenti (es. RM encefalo).", color: col.acc });
+    }
+
+    var result = {
+      timestamp: now,
+      dataPoints: epN,
+      evidenze: [
+        { n: "E1", title: "Frequenza e picchi ciclici", text: e1, color: col.acc },
+        { n: "E2", title: "Ricorrenza weekend migraine", text: e2, color: col.acc },
+        { n: "E3", title: "Stagionalità", text: e3, color: col.amb },
+        { n: "E4", title: "Pressione arteriosa e dieta", text: e4, color: col.grn },
+        { n: "E5", title: "Distribuzione oraria e contesto lavorativo", text: e5, color: col.blu },
+        { n: "E6", title: "Pattern dell'aura", text: e6, color: col.amb }
+      ],
+      correlazioni: [],
+      ipotesi: hypotheses
+    };
+
+    if (sleepCorr) {
+      var sleepText = "Giorni con emicrania: sonno medio " + (sleepCorr.avgMig || "N/D") + "h (" + sleepCorr.migDays + " dati). "
+        + "Giorni senza: sonno medio " + (sleepCorr.avgNorm || "N/D") + "h (" + sleepCorr.normDays + " dati). "
+        + "Sonno scarso: " + sleepCorr.badMig + " giorni con emicrania vs " + sleepCorr.badNorm + " senza."
+        + (sleepCorr.avgMig && sleepCorr.avgNorm && parseFloat(sleepCorr.avgMig) < parseFloat(sleepCorr.avgNorm) ? " → Sonno ridotto nei giorni di crisi." : "");
+      result.correlazioni.push({ n: "C1", title: "Sonno × Emicrania", text: sleepText, color: col.blu });
+    } else {
+      result.correlazioni.push({ n: "C1", title: "Sonno × Emicrania", text: "Dati di sonno insufficienti per analisi (" + sleepData.length + " registrazioni). Registrare sonno giornaliero per abilitare questa correlazione.", color: col.mut });
+    }
+
+    if (weightCorr) {
+      var wText = "Peso: " + weightCorr.first + " kg (" + weightCorr.firstDate + ") → " + weightCorr.last + " kg (" + weightCorr.lastDate + "): " + (parseFloat(weightCorr.change) >= 0 ? "+" : "") + weightCorr.change + " kg (" + (parseFloat(weightCorr.pct) >= 0 ? "+" : "") + weightCorr.pct + "%).";
+      result.correlazioni.push({ n: "C2", title: "Peso × Emicrania", text: wText, color: col.grn });
+    } else {
+      result.correlazioni.push({ n: "C2", title: "Peso × Emicrania", text: "Dati di peso insufficienti per analisi. Registrare peso regolarmente per abilitare.", color: col.mut });
+    }
+
+    if (topContexts.length > 0) {
+      var ctxText = "Contesti più frequenti: " + topContexts.map(function (c) { return "\"" + c.ctx + "\" (" + c.count + "x)"; }).join(", ") + ".";
+      result.correlazioni.push({ n: "C3", title: "Contesti/Trigger", text: ctxText, color: col.amb });
+    }
+
+    setAnalysisResult(result);
+    localStorage.setItem("anamnesi-analysis", JSON.stringify(result));
   }
 
   function handleClearDailyLog() {
@@ -908,17 +1068,36 @@ export default function App() {
         {/* 6. SINTESI CLINICA */}
         {tab === "sintesi" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+            {/* Run Analysis button */}
+            <div style={cardS}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <h3 style={{ fontSize: "16px", fontWeight: "600", margin: "0 0 4px", color: col.acc }}>Analisi Clinica Dinamica</h3>
+                  <p style={{ fontSize: "11px", color: col.mut, margin: 0 }}>
+                    {analysisResult
+                      ? "Ultima analisi: " + analysisResult.timestamp + " (" + analysisResult.dataPoints + " episodi analizzati)"
+                      : "Nessuna analisi eseguita. Clicca il bottone per generare."}
+                  </p>
+                </div>
+                <button onClick={runAnalysis} style={{ padding: "10px 24px", fontSize: "13px", fontWeight: "700", color: "#fff", background: col.acc, border: "none", borderRadius: "8px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  {analysisResult ? "Riesegui Analisi" : "Esegui Analisi"}
+                </button>
+              </div>
+              {analysisResult && analysisResult.dataPoints !== epN && (
+                <div style={{ marginTop: "10px", padding: "8px 12px", background: col.ambL, borderRadius: "6px", fontSize: "11px", color: col.amb, borderLeft: "3px solid " + col.amb }}>
+                  Attenzione: l'analisi è basata su {analysisResult.dataPoints} episodi, ma ora ci sono {epN}. Riesegui per aggiornare.
+                </div>
+              )}
+            </div>
+
+            {analysisResult && (
+            <>
+            {/* Evidenze */}
             <div style={cardS}>
               <h3 style={{ fontSize: "16px", fontWeight: "600", margin: "0 0 4px", color: col.acc }}>Sintesi delle Evidenze</h3>
-              <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 16px" }}>Riepilogo dei dati oggettivi emersi dall'analisi di {epN} episodi.</p>
-              {[
-                { n: "E1", title: "Frequenza compatibile con emicrania ad alta ricorrenza", text: "62 episodi in 635 giorni = 2.9 ep./mese. Frequenza stabile ma con picchi ciclici ogni 3-4 mesi (ott/24, gen/25, apr/25, feb/26, tutti con 5 episodi).", color: col.acc },
-                { n: "E2", title: "Ricorrenza 'weekend migraine' confermata su 21 mesi", text: "Sabato è il giorno più colpito (15 ep., 24%). Due cluster di sabati consecutivi documentati: 5 consecutivi ott-nov/24, 3 consecutivi feb/26. Lunedì secondo (14 ep., 23%). La ricorrenza sab+lun concentra il 47% degli episodi.", color: col.acc },
-                { n: "E3", title: "Stagionalità autunno-primavera", text: "Tasso in autunno e primavera: 3.5 ep./mese. Estate: 2.2 ep./mese. Ottobre è il mese con maggiore incidenza storica (8 episodi nei due anni).", color: col.amb },
-                { n: "E4", title: "Dissociazione pressione arteriosa / frequenza", text: "La dieta (no alcol, no dolci, dal 05/01/2026) ha ridotto la PA sistolica media da ~127 a ~112 mmHg (−12%), ma la frequenza è aumentata da 2.7 a 5.2 ep./mese. L'alcol e i dolci non risultano trigger primari.", color: col.grn },
-                { n: "E5", title: "Prevalenza pomeridiana e correlazione lavorativa", text: "57% degli episodi dettagliati (13/23) avviene tra 12-18h. 6 episodi hanno contesto esplicito di lavoro/computer. Possibile ruolo di postura, affaticamento visivo, luminosità schermo.", color: col.blu },
-                { n: "E6", title: "Episodi atipici dell'aura", text: "Schema abituale: aura centralizzata, senza preferenza di lato. Due eccezioni documentate: 16/11/2025 (aura x4, apparsa/scomparsa ripetutamente) e 21/02/2026 (aura lateralizzata a sinistra).", color: col.amb },
-              ].map(function (item, i) {
+              <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 16px" }}>Riepilogo calcolato da {analysisResult.dataPoints} episodi il {analysisResult.timestamp}.</p>
+              {analysisResult.evidenze.map(function (item, i) {
                 return (
                   <div key={i} style={{ padding: "14px", borderRadius: "8px", marginBottom: "10px", borderLeft: "4px solid " + item.color, background: i % 2 === 0 ? "#fafaf8" : "#fff" }}>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
@@ -931,16 +1110,31 @@ export default function App() {
               })}
             </div>
 
+            {/* Correlazioni Cruzate */}
+            {analysisResult.correlazioni.length > 0 && (
+            <div style={cardS}>
+              <h3 style={{ fontSize: "16px", fontWeight: "600", margin: "0 0 4px", color: col.blu }}>Correlazioni Incrociate</h3>
+              <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 16px" }}>Analisi automatica delle relazioni tra emicrania e altri parametri registrati.</p>
+              {analysisResult.correlazioni.map(function (item, i) {
+                return (
+                  <div key={i} style={{ padding: "14px", borderRadius: "8px", marginBottom: "10px", borderLeft: "4px solid " + item.color, background: i % 2 === 0 ? "#f0f7fa" : "#fff" }}>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
+                      <span style={{ background: item.color, color: "#fff", padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "700" }}>{item.n}</span>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: col.txt }}>{item.title}</span>
+                    </div>
+                    <div style={{ fontSize: "12px", color: col.txt, lineHeight: "1.7" }}>{item.text}</div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+
+            {/* Ipotesi */}
+            {analysisResult.ipotesi.length > 0 && (
             <div style={{ ...cardS, background: col.ambL, border: "1px solid " + col.amb + "40" }}>
               <h3 style={{ fontSize: "16px", fontWeight: "600", margin: "0 0 4px", color: col.amb }}>Ipotesi da Discutere con la Neurologista</h3>
-              <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 16px" }}>Basate sulle evidenze sopra. Non costituiscono diagnosi.</p>
-              {[
-                { id: "H1", title: "Emicrania da rilassamento (let-down migraine)", text: "La concentrazione al sabato suggerisce un meccanismo di rilassamento post-stress: durante la settimana il cortisolo è elevato (attività lavorativa), il sabato cala bruscamente → vasodilatazione → trigger. Il lunedì potrebbe rappresentare il 'rimbalzo' dello stress. Letteratura: Lipton et al., 'Reduction in perceived stress as a migraine trigger' (Neurology, 2014).", color: col.acc },
-                { id: "H2", title: "Trigger ambientale stagionale", text: "L'aumento in autunno e primavera coincide con i cambi di luce (riduzione/aumento delle ore di sole), variazioni di pressione atmosferica, e transizioni di temperatura. Questi fattori sono trigger noti per l'emicrania con aura.", color: col.amb },
-                { id: "H3", title: "Componente posturale/visiva occupazionale", text: "La prevalenza pomeridiana (57%) e la correlazione con lavoro al computer suggeriscono un ruolo dell'affaticamento visivo cumulativo, postura mantenuta, e possibilmente la frequenza di refresh dello schermo o la luce blu.", color: col.blu },
-                { id: "H4", title: "Esclusione del trigger alimentare", text: "La dieta senza alcol e dolci (dal 05/01/2026) non ha ridotto la frequenza (anzi, è aumentata a 5.2/mese). Questo suggerisce che i fattori alimentari non sono trigger primari in questo caso specifico. La PA è migliorata indipendentemente.", color: col.grn },
-                { id: "H5", title: "Monitorare la progressione dell'aura", text: "Due episodi con aura atipica (ripetizione x4 e lateralizzazione sinistra) in un contesto di aura abitualmente centralizzata. La neurologista potrebbe valutare se questi episodi richiedono approfondimenti (es. RM encefalo) per escludere cause strutturali.", color: col.acc },
-              ].map(function (item, i) {
+              <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 16px" }}>Generate automaticamente dalle evidenze. Non costituiscono diagnosi.</p>
+              {analysisResult.ipotesi.map(function (item, i) {
                 return (
                   <div key={i} style={{ padding: "14px", borderRadius: "8px", marginBottom: "10px", borderLeft: "4px solid " + item.color, background: "#fffcf5" }}>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
@@ -952,6 +1146,9 @@ export default function App() {
                 );
               })}
             </div>
+            )}
+            </>
+            )}
 
             <div style={{ background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "10px", padding: "16px", fontSize: "12px", color: col.acc }}>
               <strong>Disclaimer:</strong> Questo documento è un registro di raccolta dati con analisi statistica descrittiva. Le ipotesi presentate sono basate sugli andamenti osservati e su riferimenti alla letteratura medica, ma l'interpretazione clinica e la diagnosi sono di competenza esclusiva del medico specialista.
