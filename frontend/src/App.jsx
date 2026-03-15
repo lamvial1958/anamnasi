@@ -63,9 +63,10 @@ const episodes = [
   { id: 60, date: "2026-02-21", wd: "Sab", time: "16:00", bp: "104/67", alcohol: "No (dieta)", context: "Aura lato sinistro", src: "D" },
   { id: 61, date: "2026-02-28", wd: "Sab", time: "15:00", bp: "115/73", alcohol: "No (dieta)", context: "", src: "D" },
   { id: 62, date: "2026-03-04", wd: "Mer", time: "11:00", bp: "111/71", alcohol: "No (dieta)", context: "", src: "D" },
+  { id: 63, date: "2026-03-14", wd: "Sab", time: "23:00", bp: null, alcohol: "No (dieta)", context: "", src: "D" },
 ];
 
-const N = 62;
+const N = 63;
 const DIET = "2026-01-05";
 const CANDESARTAN = "2025-09-20";
 
@@ -232,6 +233,7 @@ export default function App() {
   const [formContext, setFormContext] = useState("");
   const [formAlcohol, setFormAlcohol] = useState("");
   const [formNotes, setFormNotes] = useState("");
+  const [editingIdx, setEditingIdx] = useState(null);
   const [showStorico, setShowStorico] = useState(false);
 
   /* Merge hardcoded + extra episodes */
@@ -356,7 +358,34 @@ export default function App() {
       alcohol: formMigraine ? (formAlcohol || null) : null,
       notes: formNotes || null
     };
-    setDailyLog(function (prev) { return prev.concat([entry]); });
+    if (editingIdx !== null) {
+      setDailyLog(function (prev) { return prev.map(function (e, i) { return i === editingIdx ? entry : e; }); });
+      setEditingIdx(null);
+    } else {
+      setDailyLog(function (prev) { return prev.concat([entry]); });
+    }
+    setFormDate(""); setFormBpS(""); setFormBpD(""); setFormKg(""); setFormSleepHours(""); setFormSleepQuality("");
+    setFormMigraine(false); setFormTime(""); setFormContext(""); setFormAlcohol(""); setFormNotes("");
+  }
+
+  function handleEditDailyEntry(idx) {
+    var entry = dailyLog[idx];
+    setFormDate(entry.date || "");
+    if (entry.bp) { var parts = entry.bp.split("/"); setFormBpS(parts[0] || ""); setFormBpD(parts[1] || ""); } else { setFormBpS(""); setFormBpD(""); }
+    setFormKg(entry.kg != null ? String(entry.kg) : "");
+    setFormSleepHours(entry.sleepHours != null ? String(entry.sleepHours) : "");
+    setFormSleepQuality(entry.sleepQuality || "");
+    setFormMigraine(!!entry.migraine);
+    setFormTime(entry.migraineTime || "");
+    setFormContext(entry.migraineContext || "");
+    setFormAlcohol(entry.alcohol || "");
+    setFormNotes(entry.notes || "");
+    setEditingIdx(idx);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleCancelEdit() {
+    setEditingIdx(null);
     setFormDate(""); setFormBpS(""); setFormBpD(""); setFormKg(""); setFormSleepHours(""); setFormSleepQuality("");
     setFormMigraine(false); setFormTime(""); setFormContext(""); setFormAlcohol(""); setFormNotes("");
   }
@@ -1026,7 +1055,7 @@ export default function App() {
             {/* Unified daily health log form */}
             <div style={cardS}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
-                <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>Diario di Salute</h3>
+                <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>{editingIdx !== null ? "Modifica registrazione" : "Diario di Salute"}</h3>
                 {(function () {
                   var bpDates = allEpisodes.filter(function (e) { return e.bp; }).map(function (e) { return e.date; })
                     .concat(dailyLog.filter(function (e) { return e.bp; }).map(function (e) { return e.date; }));
@@ -1044,7 +1073,7 @@ export default function App() {
                   );
                 })()}
               </div>
-              <form onSubmit={handleAddDailyEntry} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <form onSubmit={handleAddDailyEntry} style={{ display: "flex", flexDirection: "column", gap: "12px", borderLeft: editingIdx !== null ? "3px solid " + col.blu : "3px solid transparent", paddingLeft: editingIdx !== null ? "12px" : "0", transition: "all 0.2s" }}>
                 {/* Row 1: Date, BP, Weight */}
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
                   <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
@@ -1125,9 +1154,14 @@ export default function App() {
 
                 {/* Submit and clear buttons */}
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <button type="submit" style={{ padding: "8px 20px", fontSize: "12px", fontWeight: "600", color: "#fff", background: col.grn, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
-                    Registra
+                  <button type="submit" style={{ padding: "8px 20px", fontSize: "12px", fontWeight: "600", color: "#fff", background: editingIdx !== null ? col.blu : col.grn, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                    {editingIdx !== null ? "Aggiorna" : "Registra"}
                   </button>
+                  {editingIdx !== null && (
+                    <button type="button" onClick={handleCancelEdit} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.mut, background: "#f2f1ee", border: "1px solid " + col.bdr, borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                      Annulla
+                    </button>
+                  )}
                   {dailyLog.length > 0 && (
                     <button type="button" onClick={handleClearDailyLog} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.acc, background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
                       Cancella diario ({dailyLog.length})
@@ -1160,7 +1194,7 @@ export default function App() {
                       var origIdx = dailyLog.indexOf(entry);
                       var wd = calcWd(entry.date);
                       return (
-                        <tr key={origIdx + "-" + entry.date} style={{ background: ri % 2 === 0 ? "#fff" : "#fafaf8" }}>
+                        <tr key={origIdx + "-" + entry.date} style={{ background: editingIdx === origIdx ? col.bluL : ri % 2 === 0 ? "#fff" : "#fafaf8", transition: "background 0.2s" }}>
                           <td style={{ padding: "7px 6px", fontWeight: "500", whiteSpace: "nowrap", textAlign: "center", color: col.txt, fontSize: "11px" }}>{fmtD(entry.date)}</td>
                           <td style={{ padding: "7px 6px", textAlign: "center", color: wd === "Sab" ? col.acc : wd === "Lun" ? col.amb : col.mut, fontWeight: (wd === "Sab" || wd === "Lun") ? "600" : "400" }}>{wd}</td>
                           <td style={{ padding: "7px 6px", textAlign: "center" }}>
@@ -1185,7 +1219,8 @@ export default function App() {
                             ) : <span style={{ color: col.mut }}>—</span>}
                           </td>
                           <td style={{ padding: "7px 6px", fontSize: "11px", color: col.mut, textAlign: "left", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.notes || "—"}</td>
-                          <td style={{ padding: "7px 6px", textAlign: "center" }}>
+                          <td style={{ padding: "7px 6px", textAlign: "center", whiteSpace: "nowrap" }}>
+                            <button onClick={function () { handleEditDailyEntry(origIdx); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.blu, background: "transparent", border: "1px solid " + col.blu + "40", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit", marginRight: "4px" }}>✎</button>
                             <button onClick={function () { handleDeleteDailyEntry(origIdx); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.acc, background: "transparent", border: "1px solid " + col.acc + "40", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>X</button>
                           </td>
                         </tr>
