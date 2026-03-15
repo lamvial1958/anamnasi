@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { getConfig, saveConfig, clearConfig, isConfigured, fetchFromGitHub, saveToGitHub } from "./githubSync";
 
 const episodes = [
   { id: 1, date: "2024-06-07", wd: "Ven", time: null, bp: null, alcohol: null, context: null, src: "H" },
@@ -203,7 +204,9 @@ export default function App() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: json
-    }).catch(function () { /* API non disponibile — backup già salvato in localStorage */ });
+    }).catch(function () { /* API non disponibile */ });
+    /* Push to GitHub (debounced) */
+    pushToGitHub(data);
   }
 
   function exportBackup() {
@@ -302,6 +305,111 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState(function () {
     try { var stored = localStorage.getItem("anamnesi-analysis"); return stored ? JSON.parse(stored) : null; } catch (e) { return null; }
   });
+
+  /* --- GitHub Sync state --- */
+  const [ghConfigOpen, setGhConfigOpen] = useState(false);
+  const [ghToken, setGhToken] = useState("");
+  const [ghSyncStatus, setGhSyncStatus] = useState(""); // "", "syncing", "ok", "error"
+  const [ghSyncMsg, setGhSyncMsg] = useState("");
+  const [ghLastSync, setGhLastSync] = useState(localStorage.getItem("anamnesi-github-lastsync") || "");
+  const ghShaRef = useRef(null);
+  const ghSaveTimer = useRef(null);
+
+  /* Load data from GitHub on mount (if configured) */
+  useEffect(function () {
+    if (!isConfigured()) return;
+    setGhSyncStatus("syncing");
+    setGhSyncMsg("Caricando dal GitHub...");
+    fetchFromGitHub().then(function (result) {
+      if (!result || !result.data) {
+        setGhSyncStatus("ok");
+        setGhSyncMsg("Nessun backup trovato su GitHub");
+        return;
+      }
+      ghShaRef.current = result.sha;
+      var data = result.data;
+      /* Merge: GitHub data wins if it's newer than local */
+      var localDate = localStorage.getItem("anamnesi-backup-full");
+      var localExport = null;
+      try { localExport = localDate ? JSON.parse(localDate) : null; } catch (e) { /* ignore */ }
+      var ghDate = data.exportDate ? new Date(data.exportDate).getTime() : 0;
+      var loDate = localExport && localExport.exportDate ? new Date(localExport.exportDate).getTime() : 0;
+
+      if (ghDate >= loDate) {
+        /* GitHub is newer or same — restore from GitHub */
+        if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
+        if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
+        if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
+        localStorage.setItem("anamnesi-backup-full", JSON.stringify(data));
+        setGhSyncMsg("Dati sincronizzati dal GitHub");
+      } else {
+        setGhSyncMsg("Dati locali più recenti — verrà fatto upload");
+      }
+      var now = new Date().toISOString().slice(0, 16).replace("T", " ");
+      setGhLastSync(now);
+      localStorage.setItem("anamnesi-github-lastsync", now);
+      setGhSyncStatus("ok");
+    }).catch(function (err) {
+      setGhSyncStatus("error");
+      setGhSyncMsg("Errore sync: " + err.message);
+    });
+  }, []);
+
+  /* Debounced save to GitHub */
+  var pushToGitHub = useCallback(function (backupData) {
+    if (!isConfigured()) return;
+    if (ghSaveTimer.current) clearTimeout(ghSaveTimer.current);
+    ghSaveTimer.current = setTimeout(function () {
+      setGhSyncStatus("syncing");
+      setGhSyncMsg("Salvando su GitHub...");
+      saveToGitHub(backupData, ghShaRef.current).then(function (newSha) {
+        ghShaRef.current = newSha;
+        var now = new Date().toISOString().slice(0, 16).replace("T", " ");
+        setGhLastSync(now);
+        localStorage.setItem("anamnesi-github-lastsync", now);
+        setGhSyncStatus("ok");
+        setGhSyncMsg("Salvato su GitHub");
+      }).catch(function (err) {
+        setGhSyncStatus("error");
+        setGhSyncMsg("Errore salvataggio: " + err.message);
+        /* If SHA mismatch (409), re-fetch to get latest SHA */
+        if (err.message.indexOf("409") >= 0) {
+          fetchFromGitHub().then(function (r) { if (r) ghShaRef.current = r.sha; });
+        }
+      });
+    }, 2000); // 2s debounce to avoid too many commits
+  }, []);
+
+  /* Save to GitHub on beforeunload (when closing/navigating away) */
+  useEffect(function () {
+    function handleBeforeUnload() {
+      if (!isConfigured()) return;
+      var json = localStorage.getItem("anamnesi-backup-full");
+      if (!json) return;
+      var cfg = getConfig();
+      var encoded = btoa(unescape(encodeURIComponent(json)));
+      var body = JSON.stringify({
+        message: "Auto-backup (chiusura) " + new Date().toISOString().slice(0, 16).replace("T", " "),
+        content: encoded,
+        sha: ghShaRef.current || undefined,
+      });
+      /* Use sendBeacon for reliability on page close */
+      var url = "https://api.github.com/repos/" + cfg.owner + "/" + cfg.repo + "/contents/anamnesi-backup.json";
+      /* sendBeacon doesn't support custom headers, so use keepalive fetch */
+      fetch(url, {
+        method: "PUT",
+        headers: {
+          "Authorization": "Bearer " + cfg.token,
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json",
+        },
+        body: body,
+        keepalive: true,
+      }).catch(function () { /* best effort */ });
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return function () { window.removeEventListener("beforeunload", handleBeforeUnload); };
+  }, []);
 
   /* Merge hardcoded + extra episodes */
   var allEpisodes = episodes.concat(extraEpisodes).slice().sort(function (a, b) {
@@ -1595,6 +1703,115 @@ export default function App() {
                   </label>
                 </div>
               </div>
+            </div>
+
+            {/* GitHub Cloud Sync */}
+            <div className="no-print" style={cardS}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 4px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    Sincronizzazione Cloud (GitHub)
+                    {ghSyncStatus === "syncing" && <span style={{ fontSize: "10px", color: col.amb, fontWeight: "400" }}>sincronizzando...</span>}
+                    {ghSyncStatus === "ok" && <span style={{ fontSize: "10px", color: col.grn, fontWeight: "400" }}>connesso</span>}
+                    {ghSyncStatus === "error" && <span style={{ fontSize: "10px", color: col.acc, fontWeight: "400" }}>errore</span>}
+                  </h3>
+                  <p style={{ fontSize: "11px", color: col.mut, margin: 0 }}>
+                    {isConfigured()
+                      ? "I dati vengono sincronizzati automaticamente con GitHub. Accessibile da qualsiasi dispositivo."
+                      : "Configura un token GitHub per sincronizzare i dati tra dispositivi (PC, cellulare, tablet)."}
+                  </p>
+                  {ghSyncMsg && <p style={{ fontSize: "10px", color: ghSyncStatus === "error" ? col.acc : col.grn, margin: "4px 0 0" }}>{ghSyncMsg}</p>}
+                  {ghLastSync && <p style={{ fontSize: "10px", color: col.mut, margin: "2px 0 0" }}>Ultimo sync: {ghLastSync}</p>}
+                </div>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  {isConfigured() ? (
+                    <>
+                      <button type="button" onClick={function () {
+                        setGhSyncStatus("syncing");
+                        setGhSyncMsg("Sincronizzando...");
+                        fetchFromGitHub().then(function (result) {
+                          if (result && result.data) {
+                            ghShaRef.current = result.sha;
+                            var data = result.data;
+                            if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
+                            if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
+                            if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
+                            localStorage.setItem("anamnesi-backup-full", JSON.stringify(data));
+                          }
+                          var now = new Date().toISOString().slice(0, 16).replace("T", " ");
+                          setGhLastSync(now);
+                          localStorage.setItem("anamnesi-github-lastsync", now);
+                          setGhSyncStatus("ok");
+                          setGhSyncMsg("Sincronizzato!");
+                        }).catch(function (err) {
+                          setGhSyncStatus("error");
+                          setGhSyncMsg("Errore: " + err.message);
+                        });
+                      }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                        Sincronizza ora
+                      </button>
+                      <button type="button" onClick={function () { clearConfig(); setGhSyncStatus(""); setGhSyncMsg(""); setGhLastSync(""); localStorage.removeItem("anamnesi-github-lastsync"); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.acc, background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                        Disconnetti
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={function () { setGhConfigOpen(true); var cfg = getConfig(); setGhToken(cfg.token); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                      Configura GitHub
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* GitHub config modal */}
+              {ghConfigOpen && (
+                <div style={{ marginTop: "16px", padding: "16px", background: col.bluL, borderRadius: "8px", border: "1px solid " + col.blu + "30" }}>
+                  <h4 style={{ fontSize: "13px", fontWeight: "600", margin: "0 0 8px" }}>Configurazione GitHub</h4>
+                  <p style={{ fontSize: "11px", color: col.mut, margin: "0 0 12px", lineHeight: "1.5" }}>
+                    Crea un <strong>Personal Access Token</strong> su GitHub:<br />
+                    Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens<br />
+                    Permessi necessari: <strong>Contents: Read and write</strong> (solo per il repo anamnasi)
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <label style={{ fontSize: "11px", fontWeight: "600" }}>
+                      Token GitHub
+                      <input type="password" value={ghToken} onChange={function (e) { setGhToken(e.target.value); }} placeholder="github_pat_..." style={{ display: "block", width: "100%", marginTop: "4px", padding: "8px", fontSize: "12px", border: "1px solid " + col.bdr, borderRadius: "6px", fontFamily: "monospace", boxSizing: "border-box" }} />
+                    </label>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                      <button type="button" onClick={function () {
+                        if (!ghToken.trim()) return;
+                        saveConfig(ghToken.trim());
+                        setGhConfigOpen(false);
+                        /* Test connection + initial sync */
+                        setGhSyncStatus("syncing");
+                        setGhSyncMsg("Testando connessione...");
+                        fetchFromGitHub().then(function (result) {
+                          if (result) ghShaRef.current = result.sha;
+                          setGhSyncStatus("ok");
+                          setGhSyncMsg("Connesso! I dati verranno sincronizzati automaticamente.");
+                          /* Upload current data if GitHub is empty or older */
+                          var currentBackup = localStorage.getItem("anamnesi-backup-full");
+                          if (currentBackup) {
+                            var data = JSON.parse(currentBackup);
+                            pushToGitHub(data);
+                          }
+                          var now = new Date().toISOString().slice(0, 16).replace("T", " ");
+                          setGhLastSync(now);
+                          localStorage.setItem("anamnesi-github-lastsync", now);
+                        }).catch(function (err) {
+                          setGhSyncStatus("error");
+                          setGhSyncMsg("Errore di connessione: " + err.message);
+                          clearConfig();
+                        });
+                      }} style={{ padding: "8px 20px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.blu, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                        Salva e Connetti
+                      </button>
+                      <button type="button" onClick={function () { setGhConfigOpen(false); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.mut, background: "transparent", border: "1px solid " + col.bdr, borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Collapsible section: original episode history */}
