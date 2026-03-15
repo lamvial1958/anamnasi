@@ -18,15 +18,11 @@
 
 ### ~~1. Merge para master e push remoto~~ ✅ (concluído 11/03/2026)
 
-### ~~2. Visualização do Frontend (Deploy)~~ ✅ (concluído 12/03/2026)
-- **URL**: https://anamnesivial.netlify.app
-- **Netlify**: projeto `anamnesivial`, build Vite configurado (base: `frontend`, publish: `frontend/dist`)
-- Deploy automático a cada push no `main`
-- O usuário ainda não conseguiu ver a aplicação no navegador
-- Opções a explorar:
-  - **GitHub Pages**: deploy estático (grátis, acessível de qualquer lugar)
-  - **Claude Code Desktop**: usar `npm run dev` com acesso direto ao localhost
-  - **Netlify/Vercel**: deploy automático a cada push
+### ~~2. Visualização do Frontend (Deploy)~~ ✅ (migrado para GitHub Pages 15/03/2026)
+- **URL**: https://lamvial1958.github.io/anamnasi/
+- **GitHub Pages**: deploy automático via GitHub Actions a cada push no `main`
+- **Build**: Vite com base path `/anamnasi/`, workflow em `.github/workflows/deploy.yml`
+- Netlify descontinuado (limite de uso atingido)
 
 ### ~~3. Sincronização de Arquivos~~ ✅ (concluído 12/03/2026)
 - `analisi-neurologista.jsx` sincronizado como cópia de `frontend/src/App.jsx`
