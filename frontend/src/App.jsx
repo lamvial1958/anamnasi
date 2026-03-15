@@ -176,6 +176,7 @@ function Alert({ bg, border, color, children }) {
 
 export default function App() {
   const [tab, setTab] = useState("timeline");
+  const [printMode, setPrintMode] = useState(false);
 
   /* --- Feature 5: Date range filter --- */
   const [filterFrom, setFilterFrom] = useState("");
@@ -194,14 +195,23 @@ export default function App() {
     localStorage.setItem("anamnesi-daily-log", JSON.stringify(dailyLog));
   }, [dailyLog]);
 
-  function autoBackup(log, analysis) {
-    var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: log || dailyLog, analysis: analysis || analysisResult };
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "anamnesi-backup.json";
-    a.click();
-    URL.revokeObjectURL(a.href);
+  function autoBackup(log, analysis, estemporanei) {
+    var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: log || dailyLog, analysis: analysis || analysisResult, farmaciEstemporanei: estemporanei || prnMeds };
+    var json = JSON.stringify(data, null, 2);
+    fetch("/api/save-backup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: json
+    }).then(function (r) {
+      if (!r.ok) throw new Error("API non disponibile");
+    }).catch(function () {
+      var blob = new Blob([json], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "anamnesi-backup.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
   }
 
   function handleImportBackup(evt) {
@@ -213,10 +223,21 @@ export default function App() {
         var data = JSON.parse(e.target.result);
         if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
         if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
+        if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
         alert("Backup importato: " + (data.dailyLog ? data.dailyLog.length : 0) + " registrazioni, analisi " + (data.analysis ? "presente" : "assente") + ".");
       } catch (err) { alert("Errore nel file di backup: " + err.message); }
     };
     reader.readAsText(file);
+  }
+
+  function handlePrint() {
+    setPrintMode(true);
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        window.print();
+        setPrintMode(false);
+      }, 400);
+    });
   }
 
   /* --- Derive data from daily log --- */
@@ -260,6 +281,18 @@ export default function App() {
   const [formNotes, setFormNotes] = useState("");
   const [editingIdx, setEditingIdx] = useState(null);
   const [showStorico, setShowStorico] = useState(false);
+
+  /* --- Farmaci estemporanei (PRN) state --- */
+  const [prnMeds, setPrnMeds] = useState(function () {
+    try {
+      var stored = localStorage.getItem("anamnesi-prn-meds");
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) { return []; }
+  });
+  const [prnName, setPrnName] = useState("");
+  const [prnDose, setPrnDose] = useState("");
+  const [prnDate, setPrnDate] = useState(new Date().toISOString().slice(0, 10));
+  const [prnReason, setPrnReason] = useState("");
   const [analysisResult, setAnalysisResult] = useState(function () {
     try { var stored = localStorage.getItem("anamnesi-analysis"); return stored ? JSON.parse(stored) : null; } catch (e) { return null; }
   });
@@ -618,22 +651,24 @@ export default function App() {
       <style>{"\
 @media print {\
   .no-print { display: none !important; }\
-  .print-show { display: block !important; }\
+  .print-only { display: block !important; }\
   body { background: #fff !important; }\
-  div { break-inside: avoid; }\
-  .tab-content > div { display: block !important; }\
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }\
+  .print-page-break { page-break-before: always; }\
+  .print-section { break-inside: avoid; }\
 }\
+@page { margin: 12mm 10mm; }\
       "}</style>
 
       <div style={{ maxWidth: "960px", margin: "0 auto" }}>
 
         {/* HEADER */}
-        <div style={{ marginBottom: "22px", borderBottom: "2px solid " + col.acc, paddingBottom: "12px" }}>
+        <div className={printMode ? "no-print" : ""} style={{ marginBottom: "22px", borderBottom: "2px solid " + col.acc, paddingBottom: "12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
             <h1 style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "24px", color: col.txt, margin: 0, fontWeight: 400 }}>Analisi Completa — Emicrania con Aura</h1>
             {/* Feature 2: PDF Export button */}
-            <button className="no-print" onClick={function () { window.print(); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
-              Stampa / PDF
+            <button className="no-print" onClick={handlePrint} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+              Genera PDF Clinico
             </button>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px", flexWrap: "wrap", gap: "6px" }}>
@@ -654,6 +689,19 @@ export default function App() {
               Importa backup
               <input type="file" accept=".json" onChange={handleImportBackup} style={{ display: "none" }} />
             </label>
+          </div>
+        )}
+
+        {/* Print header banner */}
+        {printMode && (
+          <div style={{ background: col.acc, color: "#fff", padding: "18px 24px", borderRadius: "8px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <h1 style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "22px", margin: "0 0 6px", fontWeight: 400, color: "#fff" }}>REGISTRO EMICRANIA CON AURA</h1>
+              <div style={{ fontSize: "12px", opacity: 0.9 }}>{N} episodi · {fmtD(episodes[0].date)} — {fmtD(episodes[N - 1].date)} ({dBetw(episodes[0].date, episodes[N - 1].date)}gg)</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: "11px", fontWeight: "600" }}>USO CLINICO</div>
+            </div>
           </div>
         )}
 
@@ -694,7 +742,8 @@ export default function App() {
         </div>
 
         {/* 1. TIMELINE */}
-        {tab === "timeline" && (
+        {printMode && <div style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>1. RIEPILOGO E TIMELINE</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "timeline" || printMode) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Intervalli tra Episodi — {epN} episodi</h3>
@@ -737,7 +786,8 @@ export default function App() {
         )}
 
         {/* 2. FREQUENZA */}
-        {tab === "frequenza" && (
+        {printMode && <div className="print-page-break" style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>2. FREQUENZA E STAGIONALITÀ</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "frequenza" || printMode) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Frequenza Mensile</h3>
@@ -764,7 +814,8 @@ export default function App() {
         )}
 
         {/* 3. HEATMAP */}
-        {tab === "heatmap" && (
+        {printMode && <div className="print-page-break" style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>3. DISTRIBUZIONE SETTIMANALE</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "heatmap" || printMode) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Giorno della Settimana — {epN} episodi</h3>
@@ -805,7 +856,8 @@ export default function App() {
         )}
 
         {/* 4. PA/DIETA */}
-        {tab === "pressione" && (function () {
+        {printMode && <div className="print-page-break" style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>4. PRESSIONE E DIETA</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "pressione" || printMode) && (function () {
           var chartH = 220, chartPadL = 55, chartPadR = 25, chartPadT = 35, chartPadB = 50;
           var bpSorted = bpEps.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
           if (bpSorted.length === 0) {
@@ -1083,7 +1135,8 @@ export default function App() {
         })()}
 
         {/* 5. ORARIO/AURA */}
-        {tab === "orario" && (
+        {printMode && <div className="print-page-break" style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>5. ORARIO E AURA</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "orario" || printMode) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={cardS}>
               <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px" }}>Fascia Oraria ({detailed.length} ep. dettagliati)</h3>
@@ -1112,11 +1165,12 @@ export default function App() {
         )}
 
         {/* 6. SINTESI CLINICA */}
-        {tab === "sintesi" && (
+        {printMode && analysisResult && <div className="print-page-break" style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>6. SINTESI DELLE EVIDENZE E IPOTESI</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "sintesi" || (printMode && analysisResult)) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
             {/* Run Analysis button */}
-            <div style={cardS}>
+            <div className="no-print" style={cardS}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
                 <div>
                   <h3 style={{ fontSize: "16px", fontWeight: "600", margin: "0 0 4px", color: col.acc }}>Analisi Clinica Dinamica</h3>
@@ -1203,7 +1257,8 @@ export default function App() {
         )}
 
         {/* 7. FARMACI */}
-        {tab === "farmaci" && (
+        {printMode && <div className="print-page-break" style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>7. FARMACI</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "farmaci" || printMode) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
             <div style={cardS}>
@@ -1261,13 +1316,48 @@ export default function App() {
                 <span style={{ background: col.amb, color: "#fff", padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700" }}>PRN</span>
                 <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>Farmaci estemporanei (al bisogno)</h3>
               </div>
-              {farmaciEstemporanei.length === 0 ? (
+
+              {/* PRN entry form */}
+              <form className="no-print" onSubmit={function (evt) {
+                evt.preventDefault();
+                if (!prnName || !prnDose || !prnDate) return;
+                var entry = { name: prnName, dose: prnDose, date: prnDate, reason: prnReason };
+                var updated = [].concat(prnMeds, [entry]).sort(function (a, b) { return a.date > b.date ? -1 : 1; });
+                setPrnMeds(updated);
+                localStorage.setItem("anamnesi-prn-meds", JSON.stringify(updated));
+                autoBackup(null, null, updated);
+                setPrnName(""); setPrnDose(""); setPrnReason("");
+                setPrnDate(new Date().toISOString().slice(0, 10));
+              }} style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "flex-end", marginBottom: "14px", padding: "12px", background: "#fafaf8", borderRadius: "8px", borderLeft: "3px solid " + col.amb }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                  Data *
+                  <input type="date" value={prnDate} onChange={function (e) { setPrnDate(e.target.value); }} required style={inputS} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, flex: 1, minWidth: "120px" }}>
+                  Farmaco *
+                  <input type="text" value={prnName} onChange={function (e) { setPrnName(e.target.value); }} placeholder="es. Ibuprofene" required style={inputS} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut }}>
+                  Dose *
+                  <input type="text" value={prnDose} onChange={function (e) { setPrnDose(e.target.value); }} placeholder="es. 400 mg" required style={{ ...inputS, width: "90px" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, flex: 1, minWidth: "120px" }}>
+                  Motivo
+                  <input type="text" value={prnReason} onChange={function (e) { setPrnReason(e.target.value); }} placeholder="es. Cefalea intensa" style={inputS} />
+                </label>
+                <button type="submit" style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.amb, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                  Registra
+                </button>
+              </form>
+
+              {/* PRN list */}
+              {prnMeds.length === 0 ? (
                 <div style={{ padding: "16px", background: "#fafaf8", borderRadius: "8px", textAlign: "center", fontSize: "12px", color: col.mut, fontStyle: "italic" }}>
                   Nessun farmaco estemporaneo registrato.
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {farmaciEstemporanei.map(function (med, i) {
+                  {prnMeds.map(function (med, i) {
                     return (
                       <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: col.ambL, borderRadius: "8px", borderLeft: "3px solid " + col.amb, flexWrap: "wrap" }}>
                         <div style={{ width: "75px", fontSize: "11px", color: col.mut }}>{fmtD(med.date)}</div>
@@ -1277,7 +1367,13 @@ export default function App() {
                         <div style={{ flex: 1, minWidth: "70px" }}>
                           <div style={{ fontSize: "11px", fontWeight: "600", color: col.amb }}>{med.dose}</div>
                         </div>
-                        <div style={{ fontSize: "11px", color: col.mut }}>{med.reason}</div>
+                        <div style={{ flex: 1, fontSize: "11px", color: col.mut }}>{med.reason || "—"}</div>
+                        <button className="no-print" onClick={function () {
+                          var updated = prnMeds.filter(function (_, j) { return j !== i; });
+                          setPrnMeds(updated);
+                          localStorage.setItem("anamnesi-prn-meds", JSON.stringify(updated));
+                          autoBackup(null, null, updated);
+                        }} style={{ padding: "3px 8px", fontSize: "10px", color: col.acc, background: "transparent", border: "1px solid " + col.acc + "40", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>X</button>
                       </div>
                     );
                   })}
@@ -1292,11 +1388,12 @@ export default function App() {
         )}
 
         {/* 8. REGISTRO — Diario di Salute */}
-        {tab === "registro" && (
+        {printMode && <div className="print-page-break" style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>8. REGISTRO COMPLETO</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "registro" || printMode) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
             {/* Unified daily health log form */}
-            <div style={cardS}>
+            <div className="no-print" style={cardS}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
                 <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>{editingIdx !== null ? "Modifica registrazione" : "Diario di Salute"}</h3>
                 {(function () {
@@ -1418,7 +1515,7 @@ export default function App() {
             </div>
 
             {/* Daily log table */}
-            {dailyLog.length > 0 && (
+            {dailyLog.length > 0 && !printMode && (
             <div style={{ ...cardS, padding: 0, overflow: "hidden" }}>
               <div style={{ padding: "14px 14px 8px", borderBottom: "1px solid " + col.bdr }}>
                 <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>Diario giornaliero ({dailyLog.length} registrazioni)</h3>
@@ -1476,11 +1573,11 @@ export default function App() {
             )}
 
             {/* Backup / Restore */}
-            <div style={cardS}>
+            <div className="no-print" style={cardS}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                 <div>
                   <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 4px" }}>Backup dati</h3>
-                  <p style={{ fontSize: "11px", color: col.mut, margin: 0 }}>Il backup viene scaricato automaticamente ad ogni modifica. Qui puoi esportare/importare manualmente.</p>
+                  <p style={{ fontSize: "11px", color: col.mut, margin: 0 }}>Il backup viene salvato automaticamente nella cartella del programma. Qui puoi esportare/importare manualmente.</p>
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <button type="button" onClick={function () { autoBackup(null, null); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
@@ -1499,9 +1596,9 @@ export default function App() {
               <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={function () { setShowStorico(!showStorico); }}>
                 <span style={{ fontSize: "14px", fontWeight: "600" }}>Storico episodi (dati originali)</span>
                 <span style={{ fontSize: "11px", color: col.mut }}>— {ep.length} episodi</span>
-                <span style={{ fontSize: "12px", color: col.blu, marginLeft: "auto" }}>{showStorico ? "Nascondi" : "Mostra"}</span>
+                {!printMode && <span style={{ fontSize: "12px", color: col.blu, marginLeft: "auto" }}>{showStorico ? "Nascondi" : "Mostra"}</span>}
               </div>
-              {showStorico && (
+              {(showStorico || printMode) && (
               <div style={{ marginTop: "12px", overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                   <thead>
@@ -1545,7 +1642,8 @@ export default function App() {
         )}
 
         {/* 9. PESO/SONNO (Features 3 & 4) */}
-        {tab === "peso_sonno" && (
+        {printMode && <div className="print-page-break" style={{ marginBottom: "16px" }}><h2 style={{ fontSize: "17px", fontWeight: "700", color: col.acc, margin: "0 0 6px" }}>9. PESO E SONNO</h2><div style={{ borderBottom: "2px solid " + col.acc }} /></div>}
+        {(tab === "peso_sonno" || printMode) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
             {/* Weight section */}
@@ -1662,7 +1760,7 @@ export default function App() {
 
         {/* FOOTER */}
         <div style={{ marginTop: "22px", paddingTop: "10px", borderTop: "1px solid " + col.bdr, fontSize: "9px", color: col.mut, textAlign: "center" }}>
-          Generato: 11/03/2026 · 62 episodi (giu/2024 — mar/2026) · Interpretazione di competenza del medico specialista
+          Generato: {new Date().toLocaleDateString("it-IT")} · {N} episodi ({fmtD(episodes[0].date).slice(3)} — {fmtD(episodes[N - 1].date).slice(3)}) · Interpretazione di competenza del medico specialista
         </div>
       </div>
     </div>
