@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "exportDate": "2026-03-15T16:14:09.875Z",
+  "dailyLog": [
+    {
+      "date": "2026-03-05",
+      "bp": "105/65",
+      "kg": null,
+      "sleepHours": 8.5,
+      "sleepQuality": "buona",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-03-06",
+      "bp": "113/65",
+      "kg": null,
+      "sleepHours": 8,
+      "sleepQuality": "buona",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-03-07",
+      "bp": "111/67",
+      "kg": null,
+      "sleepHours": null,
+      "sleepQuality": null,
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-03-09",
+      "bp": "117/66",
+      "kg": null,
+      "sleepHours": null,
+      "sleepQuality": null,
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-03-10",
+      "bp": "103/62",
+      "kg": null,
+      "sleepHours": null,
+      "sleepQuality": null,
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-03-11",
+      "bp": "102/66",
+      "kg": null,
+      "sleepHours": 8,
+      "sleepQuality": "buona",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-03-12",
+      "bp": "119/70",
+      "kg": null,
+      "sleepHours": 8.5,
+      "sleepQuality": "buona",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-03-14",
+      "bp": "109/64",
+      "kg": null,
+      "sleepHours": 8.5,
+      "sleepQuality": "media",
+      "migraine": true,
+      "migraineTime": "23:00",
+      "migraineContext": "Al letto prima di addormentarmi",
+      "alcohol": "Sì",
+      "notes": "Serata con amici. Niente dieta nella sera, assunzione di mezza bottiglia di vino"
+    },
+    {
+      "date": "2026-03-13",
+      "bp": "110/68",
+      "kg": null,
+      "sleepHours": 8.5,
+      "sleepQuality": "buona",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-03-15",
+      "bp": "108/64",
+      "kg": 114.55,
+      "sleepHours": 9,
+      "sleepQuality": "media",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    }
+  ],
+  "analysis": {
+    "timestamp": "15/03/2026, 10:15",
+    "dataPoints": 63,
+    "evidenze": [
+      {
+        "n": "E1",
+        "title": "Frequenza e picchi ciclici",
+        "text": "63 episodi in 645 giorni = 2.9 ep./mese. Picchi: Ott 24 (5), Gen 25 (5), Apr 25 (5), Feb 26 (5), Mar 25 (4), Mag 25 (4), Set 25 (4), Nov 25 (4), Gen 26 (4).",
+        "color": "#c24b38"
+      },
+      {
+        "n": "E2",
+        "title": "Ricorrenza weekend migraine",
+        "text": "Sabato: 16 ep. (25%). Lunedì: 14 ep. (22%). Sab+Lun concentra il 48% degli episodi. Cluster sabati: 6 consecutivi (12/10/2024 — 16/11/2024); 3 consecutivi (14/02/2026 — 28/02/2026).",
+        "color": "#c24b38"
+      },
+      {
+        "n": "E3",
+        "title": "Stagionalità",
+        "text": "Stagione più colpita: Primavera (mar-mag) (3.8 ep./mese). Meno colpita: Estate (giu-ago) (2.3 ep./mese). Mese storico peggiore: Ott 24 (5 episodi).",
+        "color": "#b8860b"
+      },
+      {
+        "n": "E4",
+        "title": "Pressione arteriosa e dieta",
+        "text": "Pre-dieta (07/06/2024 — 05/01/2026): 52 ep., 2.7 ep./mese, PA media 128 mmHg. Post-dieta (05/01/2026 — 14/03/2026): 11 ep., 4.9 ep./mese, PA media 112 mmHg (-12%). La dieta ridusse la PA ma la frequenza è aumentata → alcol/dolci non sono trigger primari.",
+        "color": "#4a7c59"
+      },
+      {
+        "n": "E5",
+        "title": "Distribuzione oraria e contesto lavorativo",
+        "text": "Episodi dettagliati: 24. Pomeriggio (12-18h): 14 (58%). Mattina: 4, Sera: 3. Episodi con contesto lavoro/computer: 4. Prevalenza pomeridiana suggerisce ruolo di affaticamento visivo/posturale cumulativo.",
+        "color": "#3a6b8c"
+      },
+      {
+        "n": "E6",
+        "title": "Pattern dell'aura",
+        "text": "Episodi con aura documentata: 2. 16/11/2025: Computer; Aura x4; 21/02/2026: Aura lato sinistro.",
+        "color": "#b8860b"
+      }
+    ],
+    "correlazioni": [
+      {
+        "n": "C1",
+        "title": "Sonno × Emicrania",
+        "text": "Giorni con emicrania: sonno medio 8.5h (1 dati). Giorni senza: sonno medio 8.4h (6 dati). Sonno scarso: 0 giorni con emicrania vs 0 senza.",
+        "color": "#3a6b8c"
+      },
+      {
+        "n": "C2",
+        "title": "Peso × Emicrania",
+        "text": "Peso: 130 kg (19/01/2026) → 114.55 kg (15/03/2026): -15.5 kg (-11.9%).",
+        "color": "#4a7c59"
+      },
+      {
+        "n": "C3",
+        "title": "Contesti/Trigger",
+        "text": "Contesti più frequenti: \"all'improvviso\" (2x), \"giorno tranquillo\" (1x), \"durante la cena\" (1x), \"(da foglio pa)\" (1x), \"lavorando\" (1x).",
+        "color": "#b8860b"
+      }
+    ],
+    "ipotesi": [
+      {
+        "id": "H1",
+        "title": "Emicrania da rilassamento (let-down migraine)",
+        "text": "Sab+Lun concentrano 48% degli episodi. Meccanismo probabile: cortisolo elevato in settimana → calo brusco al sabato → vasodilatazione → trigger. Lunedì potrebbe essere il rimbalzo dello stress. Rif.: Lipton et al., Neurology, 2014.",
+        "color": "#c24b38"
+      },
+      {
+        "id": "H2",
+        "title": "Trigger ambientale stagionale",
+        "text": "Primavera (mar-mag) ha tasso 3.8 ep./mese vs Estate (giu-ago) con 2.3. Variazioni di luce, pressione atmosferica e temperatura sono trigger noti per emicrania con aura.",
+        "color": "#b8860b"
+      },
+      {
+        "id": "H3",
+        "title": "Componente posturale/visiva occupazionale",
+        "text": "58% degli episodi è pomeridiano con 4 correlati a lavoro/computer. Possibile ruolo di affaticamento visivo cumulativo, postura mantenuta e luce blu.",
+        "color": "#3a6b8c"
+      },
+      {
+        "id": "H4",
+        "title": "Esclusione del trigger alimentare",
+        "text": "Post-dieta: frequenza 4.9 ep./mese (era 2.7). L'eliminazione di alcol e dolci non ha ridotto la frequenza, suggerendo che non sono trigger primari. La PA è migliorata indipendentemente.",
+        "color": "#4a7c59"
+      },
+      {
+        "id": "H5",
+        "title": "Monitorare progressione dell'aura",
+        "text": "2 episodi con aura documentata. Valutare con la neurologista se pattern atipici richiedono approfondimenti (es. RM encefalo).",
+        "color": "#c24b38"
+      }
+    ]
+  },
+  "farmaciEstemporanei": [
+    {
+      "name": "Brufen",
+      "dose": "600 mg",
+      "date": "2026-03-15",
+      "reason": "Mal di schiena"
+    },
+    {
+      "name": "Maxalt",
+      "dose": "10 mg",
+      "date": "2026-03-14",
+      "reason": "Emicrania"
+    }
+  ]
+}
