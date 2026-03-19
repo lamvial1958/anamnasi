@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-03-19T07:45:11.261Z",
+  "exportDate": "2026-03-19T07:45:31.459Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -172,7 +172,7 @@
     }
   ],
   "analysis": {
-    "timestamp": "17/03/2026, 14:05",
+    "timestamp": "19/03/2026, 08:45",
     "dataPoints": 64,
     "evidenze": [
       {
@@ -216,7 +216,7 @@
       {
         "n": "C1",
         "title": "Sonno × Emicrania",
-        "text": "Giorni con emicrania: sonno medio 8.5h (1 dati). Giorni senza: sonno medio 8.4h (8 dati). Sonno scarso: 0 giorni con emicrania vs 0 senza.",
+        "text": "Giorni con emicrania: sonno medio 8.5h (1 dati). Giorni senza: sonno medio 8.4h (10 dati). Sonno scarso: 0 giorni con emicrania vs 0 senza.",
         "color": "#3a6b8c"
       },
       {
