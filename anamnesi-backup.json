@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-03-20T07:10:50.907Z",
+  "exportDate": "2026-03-21T10:24:25.398Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -181,6 +181,18 @@
       "migraineContext": null,
       "alcohol": null,
       "notes": "Serata con vino rosso"
+    },
+    {
+      "date": "2026-03-21",
+      "bp": "113/66",
+      "kg": null,
+      "sleepHours": 9,
+      "sleepQuality": "buona",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
     }
   ],
   "analysis": {
