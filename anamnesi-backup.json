@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-03-25T07:53:59.917Z",
+  "exportDate": "2026-03-25T11:44:59.459Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -338,6 +338,12 @@
     ]
   },
   "farmaciEstemporanei": [
+    {
+      "name": "Brufen",
+      "dose": "600 mg",
+      "date": "2026-03-24",
+      "reason": "Dolori muscolari"
+    },
     {
       "name": "Brufen",
       "dose": "600 mg",
