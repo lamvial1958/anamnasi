@@ -39,7 +39,7 @@
 ## Dados do Paciente (referência)
 - **Início Candesartan**: 20/09/2025
 - **Início Dieta**: 05/01/2026
-- **Total episódios**: 62
+- **Total episódios**: 63+
 - **Suplementos**: Magnésio, Vitamina B2, Coenzima Q10, Aura Stop
 - **Medicação**: Candesartan 8mg, Zolmitriptano 2.5mg (resgate)
 
@@ -51,6 +51,15 @@
 - [x] UI na aba 9. Registro: config de token, status de sync, sincronização manual
 - [x] Multi-dispositivo: PC, celular, tablet — mesmos dados em qualquer lugar
 - [x] Token: Fine-grained PAT com permissão Contents (Read and write), expira 15/03/2027
+
+### ~~6. Sintesi Clinica (1-2 páginas)~~ ✅ (concluído 26/03/2026)
+- [x] Botão "Stampa Sintesi Clinica" no header — gera resumo de 1-2 páginas A4 para entregar ao médico
+- [x] Página 1: quadro attuale (frequência, PA, peso), cronologia terapeutica, pattern rilevanti, aura, terapia in corso, punti per discussione
+- [x] Página 2: frequência mensal (gráfico barras CSS), últimos 10 episódios, correlações, farmaci al bisogno
+- [x] Todos os episódios indicados como emicrania con aura (diagnóstico correto)
+- [x] Nome do paciente: Luiz Antonio Machado Vial
+- [x] Otimizado para `@media print` — CSS puro, sem dependências
+- [x] Substitui o relatório completo de 17 páginas para uso em consulta
 
 ## Notas Técnicas
 - React JSX com estilos inline (sem CSS framework, sem biblioteca de gráficos)
