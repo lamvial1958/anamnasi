@@ -178,6 +178,7 @@ function Alert({ bg, border, color, children }) {
 export default function App() {
   const [tab, setTab] = useState("timeline");
   const [printMode, setPrintMode] = useState(false);
+  const [sintesiClinica, setSintesiClinica] = useState(false);
 
   /* --- Feature 5: Date range filter --- */
   const [filterFrom, setFilterFrom] = useState("");
@@ -245,6 +246,16 @@ export default function App() {
       setTimeout(function () {
         window.print();
         setPrintMode(false);
+      }, 400);
+    });
+  }
+
+  function handlePrintSintesi() {
+    setSintesiClinica(true);
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        window.print();
+        setSintesiClinica(false);
       }, 400);
     });
   }
@@ -770,6 +781,8 @@ export default function App() {
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }\
   .print-page-break { page-break-before: always; }\
   .print-section { break-inside: avoid; }\
+  .sintesi-clinica-print { display: block !important; }\
+  .sintesi-hide-on-print { display: none !important; }\
 }\
 @page { margin: 12mm 10mm; }\
       "}</style>
@@ -777,13 +790,18 @@ export default function App() {
       <div style={{ maxWidth: "960px", margin: "0 auto" }}>
 
         {/* HEADER */}
-        <div className={printMode ? "no-print" : ""} style={{ marginBottom: "22px", borderBottom: "2px solid " + col.acc, paddingBottom: "12px" }}>
+        <div className={printMode ? "no-print" : (sintesiClinica ? "sintesi-hide-on-print" : "")} style={{ marginBottom: "22px", borderBottom: "2px solid " + col.acc, paddingBottom: "12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
             <h1 style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "24px", color: col.txt, margin: 0, fontWeight: 400 }}>Analisi Completa — Emicrania con Aura</h1>
             {/* Feature 2: PDF Export button */}
-            <button className="no-print" onClick={handlePrint} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
-              Genera PDF Clinico
-            </button>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button className="no-print" onClick={handlePrintSintesi} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.acc, border: "1px solid " + col.acc, borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                Stampa Sintesi Clinica
+              </button>
+              <button className="no-print" onClick={handlePrint} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                Genera PDF Completo
+              </button>
+            </div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px", flexWrap: "wrap", gap: "6px" }}>
             <span style={{ fontSize: "12px", color: col.mut }}><strong>{N} episodi</strong> · {fmtD(episodes[0].date)} — {fmtD(episodes[N - 1].date)} ({dBetw(episodes[0].date, episodes[N - 1].date)}gg ≈ 21 mesi)</span>
@@ -807,7 +825,7 @@ export default function App() {
         )}
 
         {/* Print header banner */}
-        {printMode && (
+        {printMode && !sintesiClinica && (
           <div style={{ background: col.acc, color: "#fff", padding: "18px 24px", borderRadius: "8px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h1 style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "22px", margin: "0 0 6px", fontWeight: 400, color: "#fff" }}>REGISTRO EMICRANIA CON AURA</h1>
@@ -825,6 +843,9 @@ export default function App() {
             return <button key={item[0]} onClick={function () { setTab(item[0]); }} style={tabS(tab === item[0])}>{item[1]}</button>;
           })}
         </div>
+
+        {/* Main dashboard content — hidden when printing sintesi clinica */}
+        <div className={sintesiClinica ? "sintesi-hide-on-print" : ""}>
 
         {/* STATS (always show totals from original data) */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
@@ -1981,8 +2002,336 @@ export default function App() {
           </div>
         )}
 
+        </div>{/* end main dashboard content wrapper */}
+
+        {/* SINTESI CLINICA — 1-2 page print summary */}
+        {sintesiClinica && (function () {
+          var today = new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
+          var totalDays = epN >= 2 ? dBetw(ep[0].date, ep[epN - 1].date) : 1;
+          var totalMonths = Math.round(totalDays / 30);
+          var ratePerMonth = (epN / Math.max(totalDays, 1) * 30).toFixed(1);
+
+          /* BP averages */
+          var bpChange = avgPreBP > 0 && avgPostBP > 0 ? Math.round((avgPostBP - avgPreBP) / avgPreBP * 100) : 0;
+
+          /* Weight */
+          var wFirst = weightData.length > 0 ? weightData[0] : null;
+          var wLast = weightData.length > 0 ? weightData[weightData.length - 1] : null;
+          var wDelta = wFirst && wLast ? (wLast.kg - wFirst.kg).toFixed(1) : null;
+          var wPct = wFirst && wLast ? ((wLast.kg - wFirst.kg) / wFirst.kg * 100).toFixed(1) : null;
+
+          /* Weekend % */
+          var satCount = dayC["Sab"] || 0;
+          var lunCount = dayC["Lun"] || 0;
+          var wkendPct = epN > 0 ? Math.round((satCount + lunCount) / epN * 100) : 0;
+
+          /* Afternoon % */
+          var afternoonCount = pCounts["Pomeriggio (12-18h)"] || 0;
+          var afternoonPct = detailed.length > 0 ? Math.round(afternoonCount / detailed.length * 100) : 0;
+
+          /* Season best/worst */
+          var seasonEntries = Object.keys(seasonData).map(function (k) { return { name: k, data: seasonData[k] }; });
+          var maxSeason = seasonEntries.reduce(function (a, b) { return parseFloat(a.data.rate) > parseFloat(b.data.rate) ? a : b; });
+          var minSeason = seasonEntries.reduce(function (a, b) { return parseFloat(a.data.rate) < parseFloat(b.data.rate) ? a : b; });
+
+          /* Last 10 episodes */
+          var last10 = ep.slice(-10).reverse();
+
+          /* Monthly frequency for sparkline */
+          var mKeysSorted = Object.keys(monthly).sort();
+
+          /* Aura atypical */
+          var auraEps = detailed.filter(function (e) { return e.context && e.context.toLowerCase().indexOf("aura") >= 0; });
+
+          /* Sleep correlation summary */
+          var epAfterPoorSleep = [];
+          if (sleepData.length > 0) {
+            var poorNights = sleepData.filter(function (s) { return s.quality === "scarsa"; });
+            poorNights.forEach(function (s) {
+              var nextDay = new Date(s.date + "T12:00:00");
+              nextDay.setDate(nextDay.getDate() + 1);
+              var nextStr = nextDay.toISOString().slice(0, 10);
+              ep.forEach(function (e) {
+                if (e.date === s.date || e.date === nextStr) epAfterPoorSleep.push(e);
+              });
+            });
+          }
+
+          var sc = {
+            hdr: { fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "10px", fontWeight: 700, color: col.acc, textTransform: "uppercase", letterSpacing: "1.5px", margin: "0 0 6px", paddingBottom: "3px", borderBottom: "1.5px solid " + col.acc },
+            label: { fontSize: "10px", color: col.mut, fontWeight: 600 },
+            val: { fontSize: "10px", color: col.txt },
+            cell: { padding: "3px 6px", fontSize: "9px", borderBottom: "1px solid " + col.bdr },
+            cellH: { padding: "3px 6px", fontSize: "8px", fontWeight: 700, color: col.mut, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "2px solid " + col.bdr, background: col.bg },
+          };
+
+          return (
+            <div className="sintesi-clinica-print" style={{ fontFamily: "'DM Sans',sans-serif", color: col.txt, fontSize: "10px", lineHeight: 1.5 }}>
+              {/* === PAGE 1 === */}
+              <div style={{ border: "2px solid " + col.acc, borderRadius: "8px", overflow: "hidden" }}>
+                {/* Header */}
+                <div style={{ background: col.acc, color: "#fff", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "18px", fontWeight: 400, marginBottom: "2px" }}>SINTESI CLINICA — EMICRANIA CON AURA</div>
+                    <div style={{ fontSize: "10px", opacity: 0.9 }}>Tutti gli episodi presentano aura visiva</div>
+                  </div>
+                  <div style={{ textAlign: "right", fontSize: "10px" }}>
+                    <div style={{ fontWeight: 700 }}>USO CLINICO</div>
+                  </div>
+                </div>
+
+                {/* Patient info */}
+                <div style={{ padding: "10px 20px", background: col.bg, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", fontSize: "10px", borderBottom: "1px solid " + col.bdr }}>
+                  <span><strong>Paziente:</strong> Luiz Antonio Machado Vial</span>
+                  <span><strong>Data:</strong> {today}</span>
+                  <span><strong>Monitoraggio:</strong> {fmtD(ep[0].date)} — {fmtD(ep[epN - 1].date)} ({totalMonths} mesi)</span>
+                  <span><strong>Episodi totali:</strong> {epN}</span>
+                </div>
+
+                <div style={{ padding: "16px 20px" }}>
+                  {/* QUADRO ATTUALE */}
+                  <h3 style={sc.hdr}>Quadro Attuale</h3>
+                  <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "14px" }}>
+                    <thead>
+                      <tr>
+                        <th style={sc.cellH}></th>
+                        <th style={Object.assign({}, sc.cellH, { textAlign: "center" })}>Prima ({preDietDays} gg)</th>
+                        <th style={Object.assign({}, sc.cellH, { textAlign: "center" })}>Ultimi 3 mesi ({postDietDays} gg)</th>
+                        <th style={Object.assign({}, sc.cellH, { textAlign: "center" })}>Variazione</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={Object.assign({}, sc.cell, { fontWeight: 600 })}>Frequenza</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center" })}>{preRate} ep./mese</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center", color: parseFloat(postRate) > parseFloat(preRate) ? col.acc : col.grn, fontWeight: 600 })}>{postRate} ep./mese</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center", color: parseFloat(postRate) > parseFloat(preRate) ? col.acc : col.grn })}>{parseFloat(postRate) > parseFloat(preRate) ? "\u2191" : "\u2193"}</td>
+                      </tr>
+                      <tr>
+                        <td style={Object.assign({}, sc.cell, { fontWeight: 600 })}>PA media (sist.)</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center" })}>{avgPreBP || "—"} mmHg</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center", color: col.grn, fontWeight: 600 })}>{avgPostBP || "—"} mmHg</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center", color: col.grn })}>{bpChange !== 0 ? (bpChange > 0 ? "+" : "") + bpChange + "%" : "—"}</td>
+                      </tr>
+                      {wFirst && wLast && <tr>
+                        <td style={Object.assign({}, sc.cell, { fontWeight: 600 })}>Peso</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center" })}>{wFirst.kg} kg</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center", color: col.grn, fontWeight: 600 })}>{wLast.kg} kg</td>
+                        <td style={Object.assign({}, sc.cell, { textAlign: "center", color: col.grn })}>{wDelta} kg ({wPct}%)</td>
+                      </tr>}
+                    </tbody>
+                  </table>
+
+                  {/* CRONOLOGIA TERAPEUTICA */}
+                  <h3 style={sc.hdr}>Cronologia Terapeutica</h3>
+                  <div style={{ marginBottom: "14px", paddingLeft: "8px", borderLeft: "3px solid " + col.blu }}>
+                    <div style={{ marginBottom: "4px" }}><span style={{ color: col.blu, fontWeight: 700 }}>Set 2025</span> — Inizio Candesartan EG Stada 8 mg (controllo PA)</div>
+                    <div style={{ marginBottom: "4px" }}><span style={{ color: col.blu, fontWeight: 700 }}>Gen 2026</span> — Inizio dieta + Aura Stop 2x/die (profilassi)</div>
+                    <div><span style={{ color: col.grn, fontWeight: 700 }}>Gen—Mar 2026</span> — PA normalizzata, {wDelta ? wDelta + " kg" : "calo peso in corso"}</div>
+                  </div>
+
+                  {/* PATTERN RILEVANTI */}
+                  <h3 style={sc.hdr}>Pattern Rilevanti</h3>
+                  <div style={{ marginBottom: "14px" }}>
+                    <div style={{ display: "flex", gap: "8px", marginBottom: "6px" }}>
+                      <div style={{ flex: 1, background: col.ambL, padding: "8px 10px", borderRadius: "6px", borderLeft: "3px solid " + col.amb }}>
+                        <div style={{ fontWeight: 700, color: col.amb, fontSize: "9px", textTransform: "uppercase", marginBottom: "2px" }}>Weekend</div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: col.amb }}>{wkendPct}%</div>
+                        <div style={{ fontSize: "9px", color: col.txt }}>Sab {satCount} + Lun {lunCount} ep.</div>
+                        <div style={{ fontSize: "9px", color: col.mut }}>Possibile let-down migraine</div>
+                      </div>
+                      <div style={{ flex: 1, background: col.bluL, padding: "8px 10px", borderRadius: "6px", borderLeft: "3px solid " + col.blu }}>
+                        <div style={{ fontWeight: 700, color: col.blu, fontSize: "9px", textTransform: "uppercase", marginBottom: "2px" }}>Stagionalità</div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: col.blu }}>{maxSeason.data.rate}/m</div>
+                        <div style={{ fontSize: "9px", color: col.txt }}>{maxSeason.name}</div>
+                        <div style={{ fontSize: "9px", color: col.mut }}>vs {minSeason.name} ({minSeason.data.rate}/m)</div>
+                      </div>
+                      <div style={{ flex: 1, background: col.accL, padding: "8px 10px", borderRadius: "6px", borderLeft: "3px solid " + col.acc }}>
+                        <div style={{ fontWeight: 700, color: col.acc, fontSize: "9px", textTransform: "uppercase", marginBottom: "2px" }}>Orario</div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: col.acc }}>{afternoonPct}%</div>
+                        <div style={{ fontSize: "9px", color: col.txt }}>Pomeridiano (12-18h)</div>
+                        <div style={{ fontSize: "9px", color: col.mut }}>Contesto lavoro/computer</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AURA */}
+                  <h3 style={sc.hdr}>Aura</h3>
+                  <div style={{ marginBottom: "14px", fontSize: "10px" }}>
+                    <div>Aura visiva presente in <strong>tutti</strong> gli episodi (criterio diagnostico: senza aura = cefalea, non emicrania).</div>
+                    {auraEps.length > 0 && <div style={{ marginTop: "4px", color: col.amb }}>
+                      <strong>Presentazioni atipiche documentate:</strong> {auraEps.map(function (e) { return fmtD(e.date) + " — " + e.context; }).join("; ")}.
+                    </div>}
+                  </div>
+
+                  {/* TERAPIA IN CORSO */}
+                  <h3 style={sc.hdr}>Terapia in Corso</h3>
+                  <div style={{ marginBottom: "14px" }}>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <div style={{ flex: 1, minWidth: "140px" }}>
+                        <div style={{ fontWeight: 700, fontSize: "9px", color: col.mut, textTransform: "uppercase", marginBottom: "3px" }}>Farmaci fissi</div>
+                        {farmaci.map(function (f) { return <div key={f.name} style={{ fontSize: "10px", marginBottom: "2px" }}>{f.name} <span style={{ color: col.mut }}>({f.dose})</span></div>; })}
+                      </div>
+                      <div style={{ flex: 1, minWidth: "140px" }}>
+                        <div style={{ fontWeight: 700, fontSize: "9px", color: col.mut, textTransform: "uppercase", marginBottom: "3px" }}>Profilassi</div>
+                        <div style={{ fontSize: "10px", marginBottom: "2px" }}>Aura Stop <span style={{ color: col.mut }}>(1 matt. + 1 sera)</span></div>
+                        <div style={{ fontWeight: 700, fontSize: "9px", color: col.mut, textTransform: "uppercase", marginBottom: "3px", marginTop: "6px" }}>Al bisogno</div>
+                        <div style={{ fontSize: "10px", marginBottom: "2px" }}>Maxalt 10 mg (Rizatriptan)</div>
+                        <div style={{ fontSize: "10px" }}>Brufen 600 mg (Ibuprofene)</div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: "140px" }}>
+                        <div style={{ fontWeight: 700, fontSize: "9px", color: col.mut, textTransform: "uppercase", marginBottom: "3px" }}>Integratori</div>
+                        {integratori.filter(function (i) { return i.name !== "Aura Stop"; }).map(function (i) { return <div key={i.name} style={{ fontSize: "9px", color: col.mut, marginBottom: "1px" }}>{i.name} ({i.dose})</div>; })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PUNTI PER LA DISCUSSIONE */}
+                  <h3 style={sc.hdr}>Punti per la Discussione</h3>
+                  <div style={{ background: col.bg, padding: "10px 14px", borderRadius: "6px" }}>
+                    <div style={{ marginBottom: "4px" }}><span style={{ color: col.acc, fontWeight: 700 }}>1.</span> Frequenza aumentata post-dieta ({postRate} vs {preRate} ep./mese) — correlazione temporale o effetto collaterale della dieta?</div>
+                    <div style={{ marginBottom: "4px" }}><span style={{ color: col.acc, fontWeight: 700 }}>2.</span> Pattern weekend persistente ({wkendPct}% Sab+Lun) — gestione stress/routine del fine settimana?</div>
+                    <div><span style={{ color: col.acc, fontWeight: 700 }}>3.</span> {auraEps.length > 0 ? "Due presentazioni atipiche dell'aura documentate — necessità di approfondimento diagnostico?" : "Monitoraggio dell'aura — variazioni nella presentazione?"}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* === PAGE 2 === */}
+              <div className="print-page-break" style={{ marginTop: "20px", border: "2px solid " + col.blu, borderRadius: "8px", overflow: "hidden" }}>
+                {/* Header page 2 */}
+                <div style={{ background: col.blu, color: "#fff", padding: "10px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "14px", fontWeight: 400 }}>DETTAGLIO — Luiz Antonio Machado Vial</div>
+                  <div style={{ fontSize: "9px", opacity: 0.9 }}>{today}</div>
+                </div>
+
+                <div style={{ padding: "16px 20px" }}>
+                  {/* FREQUENZA MENSILE */}
+                  <h3 style={Object.assign({}, sc.hdr, { color: col.blu, borderBottomColor: col.blu })}>Frequenza Mensile</h3>
+                  <div style={{ marginBottom: "14px" }}>
+                    {mKeysSorted.map(function (k) {
+                      var count = monthly[k];
+                      var maxV = Math.max.apply(null, Object.values(monthly));
+                      var w = Math.max((count / maxV) * 100, 8);
+                      var isPost = k >= "2026-01";
+                      return (
+                        <div key={k} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
+                          <div style={{ width: "50px", fontSize: "9px", color: col.mut, textAlign: "right" }}>{mLabels[k]}</div>
+                          <div style={{ flex: 1, height: "14px", background: col.bdr, borderRadius: "3px" }}>
+                            <div style={{ width: w + "%", height: "100%", background: isPost ? col.grn : col.blu, borderRadius: "3px", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "4px" }}>
+                              {w > 15 && <span style={{ fontSize: "8px", color: "#fff", fontWeight: 700 }}>{count}</span>}
+                            </div>
+                          </div>
+                          {w <= 15 && <span style={{ fontSize: "8px", color: col.mut, fontWeight: 600 }}>{count}</span>}
+                        </div>
+                      );
+                    })}
+                    <div style={{ fontSize: "8px", color: col.mut, marginTop: "4px" }}>
+                      <span style={{ display: "inline-block", width: "8px", height: "8px", background: col.blu, borderRadius: "2px", marginRight: "3px", verticalAlign: "middle" }}></span>Pre-dieta
+                      <span style={{ display: "inline-block", width: "8px", height: "8px", background: col.grn, borderRadius: "2px", marginLeft: "10px", marginRight: "3px", verticalAlign: "middle" }}></span>Post-dieta (dal 05/01/2026)
+                    </div>
+                  </div>
+
+                  {/* ULTIMI 10 EPISODI */}
+                  <h3 style={Object.assign({}, sc.hdr, { color: col.blu, borderBottomColor: col.blu })}>Ultimi 10 Episodi</h3>
+                  <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "14px" }}>
+                    <thead>
+                      <tr>
+                        <th style={sc.cellH}>Data</th>
+                        <th style={sc.cellH}>Giorno</th>
+                        <th style={sc.cellH}>Ora</th>
+                        <th style={sc.cellH}>PA</th>
+                        <th style={sc.cellH}>Contesto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {last10.map(function (e) {
+                        return (
+                          <tr key={e.id}>
+                            <td style={sc.cell}>{fmtD(e.date)}</td>
+                            <td style={sc.cell}>{e.wd}</td>
+                            <td style={sc.cell}>{e.time || "—"}</td>
+                            <td style={sc.cell}>{e.bp || "—"}</td>
+                            <td style={sc.cell}>{e.context || "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* CORRELAZIONI */}
+                  <h3 style={Object.assign({}, sc.hdr, { color: col.blu, borderBottomColor: col.blu })}>Correlazioni Osservate</h3>
+                  <div style={{ marginBottom: "14px" }}>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <div style={{ flex: 1, background: col.bluL, padding: "8px 10px", borderRadius: "6px", minWidth: "140px" }}>
+                        <div style={{ fontWeight: 700, fontSize: "9px", color: col.blu, textTransform: "uppercase", marginBottom: "2px" }}>Sonno</div>
+                        {sleepData.length > 0 ? (
+                          <div style={{ fontSize: "9px" }}>
+                            <div>{epAfterPoorSleep.length} episodi correlati a sonno scarso</div>
+                            <div style={{ color: col.mut }}>{sleepData.length} notti monitorate</div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: "9px", color: col.mut }}>Dati insufficienti</div>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, background: col.grnL, padding: "8px 10px", borderRadius: "6px", minWidth: "140px" }}>
+                        <div style={{ fontWeight: 700, fontSize: "9px", color: col.grn, textTransform: "uppercase", marginBottom: "2px" }}>Alcol</div>
+                        <div style={{ fontSize: "9px" }}>
+                          <div>Correlazione debole</div>
+                          <div style={{ color: col.mut }}>Dieta elimina variabile dal Gen/2026</div>
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, background: col.accL, padding: "8px 10px", borderRadius: "6px", minWidth: "140px" }}>
+                        <div style={{ fontWeight: 700, fontSize: "9px", color: col.acc, textTransform: "uppercase", marginBottom: "2px" }}>Contesto lavorativo</div>
+                        <div style={{ fontSize: "9px" }}>
+                          <div>{workEps.length} episodi durante lavoro/computer</div>
+                          <div style={{ color: col.mut }}>Possibile componente posturale/visiva</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PRN Medications if any */}
+                  {prnMeds.length > 0 && (
+                    <div>
+                      <h3 style={Object.assign({}, sc.hdr, { color: col.blu, borderBottomColor: col.blu })}>Farmaci Al Bisogno Utilizzati</h3>
+                      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "14px" }}>
+                        <thead>
+                          <tr>
+                            <th style={sc.cellH}>Data</th>
+                            <th style={sc.cellH}>Farmaco</th>
+                            <th style={sc.cellH}>Dose</th>
+                            <th style={sc.cellH}>Motivo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {prnMeds.map(function (m, i) {
+                            return (
+                              <tr key={i}>
+                                <td style={sc.cell}>{fmtD(m.date)}</td>
+                                <td style={sc.cell}>{m.name}</td>
+                                <td style={sc.cell}>{m.dose}</td>
+                                <td style={sc.cell}>{m.reason}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* FOOTER */}
+                  <div style={{ marginTop: "12px", paddingTop: "8px", borderTop: "1px solid " + col.bdr, fontSize: "8px", color: col.mut, textAlign: "center" }}>
+                    Generato: {today} · {epN} episodi monitorati ({fmtD(ep[0].date)} — {fmtD(ep[epN - 1].date)}) · Dati completi: lamvial1958.github.io/anamnasi<br />
+                    L'interpretazione clinica è di competenza esclusiva del medico specialista
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* FOOTER */}
-        <div style={{ marginTop: "22px", paddingTop: "10px", borderTop: "1px solid " + col.bdr, fontSize: "9px", color: col.mut, textAlign: "center" }}>
+        <div className={sintesiClinica ? "no-print" : ""} style={{ marginTop: "22px", paddingTop: "10px", borderTop: "1px solid " + col.bdr, fontSize: "9px", color: col.mut, textAlign: "center" }}>
           Generato: {new Date().toLocaleDateString("it-IT")} · {N} episodi ({fmtD(episodes[0].date).slice(3)} — {fmtD(episodes[N - 1].date).slice(3)}) · Interpretazione di competenza del medico specialista
         </div>
       </div>
