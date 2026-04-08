@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-04-07T06:55:21.461Z",
+  "exportDate": "2026-04-08T06:35:03.755Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -356,6 +356,18 @@
       "kg": null,
       "sleepHours": 8.5,
       "sleepQuality": "buona",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
+    },
+    {
+      "date": "2026-04-08",
+      "bp": "112/66",
+      "kg": null,
+      "sleepHours": 8.5,
+      "sleepQuality": "media",
       "migraine": false,
       "migraineTime": null,
       "migraineContext": null,
