@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-04-09T07:47:59.582Z",
+  "exportDate": "2026-04-09T07:48:07.038Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -388,37 +388,37 @@
     }
   ],
   "analysis": {
-    "timestamp": "05/04/2026, 10:56",
-    "dataPoints": 66,
+    "timestamp": "09/04/2026, 09:48",
+    "dataPoints": 67,
     "evidenze": [
       {
         "n": "E1",
         "title": "Frequenza e picchi ciclici",
-        "text": "66 episodi in 665 giorni = 3.0 ep./mese. Picchi: Ott 24 (5), Gen 25 (5), Apr 25 (5), Feb 26 (5), Mar 25 (4), Mag 25 (4), Set 25 (4), Nov 25 (4), Gen 26 (4), Mar 26 (4).",
+        "text": "67 episodi in 667 giorni = 3.0 ep./mese. Picchi: Ott 24 (5), Gen 25 (5), Apr 25 (5), Feb 26 (5), Mar 25 (4), Mag 25 (4), Set 25 (4), Nov 25 (4), Gen 26 (4), Mar 26 (4).",
         "color": "#c24b38"
       },
       {
         "n": "E2",
         "title": "Ricorrenza weekend migraine",
-        "text": "Sabato: 17 ep. (26%). Lunedì: 14 ep. (21%). Sab+Lun concentra il 47% degli episodi. Cluster sabati: 6 consecutivi (12/10/2024 — 16/11/2024); 3 consecutivi (14/02/2026 — 28/02/2026).",
+        "text": "Sabato: 17 ep. (25%). Lunedì: 14 ep. (21%). Sab+Lun concentra il 46% degli episodi. Cluster sabati: 6 consecutivi (12/10/2024 — 16/11/2024); 3 consecutivi (14/02/2026 — 28/02/2026).",
         "color": "#c24b38"
       },
       {
         "n": "E3",
         "title": "Stagionalità",
-        "text": "Stagione più colpita: Primavera (mar-mag) (3.6 ep./mese). Meno colpita: Estate (giu-ago) (2.3 ep./mese). Mese storico peggiore: Ott 24 (5 episodi).",
+        "text": "Stagione più colpita: Primavera (mar-mag) (3.8 ep./mese). Meno colpita: Estate (giu-ago) (2.3 ep./mese). Mese storico peggiore: Ott 24 (5 episodi).",
         "color": "#b8860b"
       },
       {
         "n": "E4",
         "title": "Pressione arteriosa e dieta",
-        "text": "Pre-dieta (07/06/2024 — 05/01/2026): 52 ep., 2.7 ep./mese, PA media 128 mmHg. Post-dieta (05/01/2026 — 03/04/2026): 14 ep., 4.8 ep./mese, PA media 112 mmHg (-12%). La dieta ridusse la PA ma la frequenza è aumentata → alcol/dolci non sono trigger primari.",
+        "text": "Pre-dieta (07/06/2024 — 05/01/2026): 52 ep., 2.7 ep./mese, PA media 128 mmHg. Post-dieta (05/01/2026 — 05/04/2026): 15 ep., 5.0 ep./mese, PA media 111 mmHg (-13%). La dieta ridusse la PA ma la frequenza è aumentata → alcol/dolci non sono trigger primari.",
         "color": "#4a7c59"
       },
       {
         "n": "E5",
         "title": "Distribuzione oraria e contesto lavorativo",
-        "text": "Episodi dettagliati: 27. Pomeriggio (12-18h): 14 (52%). Mattina: 4, Sera: 5. Episodi con contesto lavoro/computer: 4. Prevalenza pomeridiana suggerisce ruolo di affaticamento visivo/posturale cumulativo.",
+        "text": "Episodi dettagliati: 28. Pomeriggio (12-18h): 15 (54%). Mattina: 4, Sera: 5. Episodi con contesto lavoro/computer: 5. Prevalenza pomeridiana suggerisce ruolo di affaticamento visivo/posturale cumulativo.",
         "color": "#3a6b8c"
       },
       {
@@ -432,7 +432,7 @@
       {
         "n": "C1",
         "title": "Sonno × Emicrania",
-        "text": "Giorni con emicrania: sonno medio 8.2h (3 dati). Giorni senza: sonno medio 8.5h (21 dati). Sonno scarso: 0 giorni con emicrania vs 0 senza. → Sonno ridotto nei giorni di crisi.",
+        "text": "Giorni con emicrania: sonno medio 8.5h (4 dati). Giorni senza: sonno medio 8.5h (25 dati). Sonno scarso: 0 giorni con emicrania vs 0 senza.",
         "color": "#3a6b8c"
       },
       {
@@ -452,25 +452,25 @@
       {
         "id": "H1",
         "title": "Emicrania da rilassamento (let-down migraine)",
-        "text": "Sab+Lun concentrano 47% degli episodi. Meccanismo probabile: cortisolo elevato in settimana → calo brusco al sabato → vasodilatazione → trigger. Lunedì potrebbe essere il rimbalzo dello stress. Rif.: Lipton et al., Neurology, 2014.",
+        "text": "Sab+Lun concentrano 46% degli episodi. Meccanismo probabile: cortisolo elevato in settimana → calo brusco al sabato → vasodilatazione → trigger. Lunedì potrebbe essere il rimbalzo dello stress. Rif.: Lipton et al., Neurology, 2014.",
         "color": "#c24b38"
       },
       {
         "id": "H2",
         "title": "Trigger ambientale stagionale",
-        "text": "Primavera (mar-mag) ha tasso 3.6 ep./mese vs Estate (giu-ago) con 2.3. Variazioni di luce, pressione atmosferica e temperatura sono trigger noti per emicrania con aura.",
+        "text": "Primavera (mar-mag) ha tasso 3.8 ep./mese vs Estate (giu-ago) con 2.3. Variazioni di luce, pressione atmosferica e temperatura sono trigger noti per emicrania con aura.",
         "color": "#b8860b"
       },
       {
         "id": "H3",
         "title": "Componente posturale/visiva occupazionale",
-        "text": "52% degli episodi è pomeridiano con 4 correlati a lavoro/computer. Possibile ruolo di affaticamento visivo cumulativo, postura mantenuta e luce blu.",
+        "text": "54% degli episodi è pomeridiano con 5 correlati a lavoro/computer. Possibile ruolo di affaticamento visivo cumulativo, postura mantenuta e luce blu.",
         "color": "#3a6b8c"
       },
       {
         "id": "H4",
         "title": "Esclusione del trigger alimentare",
-        "text": "Post-dieta: frequenza 4.8 ep./mese (era 2.7). L'eliminazione di alcol e dolci non ha ridotto la frequenza, suggerendo che non sono trigger primari. La PA è migliorata indipendentemente.",
+        "text": "Post-dieta: frequenza 5.0 ep./mese (era 2.7). L'eliminazione di alcol e dolci non ha ridotto la frequenza, suggerendo che non sono trigger primari. La PA è migliorata indipendentemente.",
         "color": "#4a7c59"
       },
       {
