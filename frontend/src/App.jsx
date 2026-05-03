@@ -71,12 +71,12 @@ const N = 63;
 const DIET = "2026-01-05";
 const CANDESARTAN = "2025-09-20";
 
-const farmaci = [
+const DEFAULT_FARMACI = [
   { name: "Rosuvastatina + Ezetimibe Teva", dose: "20 mg / 10 mg", freq: "Giornaliero", purpose: "Controllo colesterolo" },
   { name: "Candesartan EG Stada", dose: "8 mg", freq: "Giornaliero", purpose: "Controllo pressione arteriosa" },
 ];
 
-const integratori = [
+const DEFAULT_INTEGRATORI = [
   { name: "Vitamina D", dose: "38 gocce", freq: "1x / settimana", purpose: "Integrazione vitaminica" },
   { name: "Vitamina C + Zinco", dose: "1 g + 20 mg", freq: "Giornaliero", purpose: "Supporto immunitario" },
   { name: "Multivitaminico Vitabright", dose: "1 capsula", freq: "Giornaliero", purpose: "Multivitaminico e minerali" },
@@ -197,8 +197,8 @@ export default function App() {
     localStorage.setItem("anamnesi-daily-log", JSON.stringify(dailyLog));
   }, [dailyLog]);
 
-  function autoBackup(log, analysis, estemporanei) {
-    var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: log || dailyLog, analysis: analysis || analysisResult, farmaciEstemporanei: estemporanei || prnMeds };
+  function autoBackup(log, analysis, estemporanei, rxList, intList) {
+    var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: log || dailyLog, analysis: analysis || analysisResult, farmaciEstemporanei: estemporanei || prnMeds, farmaci: rxList || farmaci, integratori: intList || integratori };
     var json = JSON.stringify(data, null, 2);
     localStorage.setItem("anamnesi-backup-full", json);
     fetch("/api/save-backup", {
@@ -213,7 +213,7 @@ export default function App() {
   function exportBackup() {
     var json = localStorage.getItem("anamnesi-backup-full");
     if (!json) {
-      var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: dailyLog, analysis: analysisResult, farmaciEstemporanei: prnMeds };
+      var data = { version: 1, exportDate: new Date().toISOString(), dailyLog: dailyLog, analysis: analysisResult, farmaciEstemporanei: prnMeds, farmaci: farmaci, integratori: integratori };
       json = JSON.stringify(data, null, 2);
     }
     var blob = new Blob([json], { type: "application/json" });
@@ -234,6 +234,8 @@ export default function App() {
         if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
         if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
         if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
+        if (data.farmaci) { setFarmaci(data.farmaci); localStorage.setItem("anamnesi-farmaci", JSON.stringify(data.farmaci)); }
+        if (data.integratori) { setIntegratori(data.integratori); localStorage.setItem("anamnesi-integratori", JSON.stringify(data.integratori)); }
         alert("Backup importato: " + (data.dailyLog ? data.dailyLog.length : 0) + " registrazioni, analisi " + (data.analysis ? "presente" : "assente") + ".");
       } catch (err) { alert("Errore nel file di backup: " + err.message); }
     };
@@ -313,6 +315,28 @@ export default function App() {
   const [prnDose, setPrnDose] = useState("");
   const [prnDate, setPrnDate] = useState(new Date().toISOString().slice(0, 10));
   const [prnReason, setPrnReason] = useState("");
+
+  /* --- Farmaci fissi (Rx) state --- */
+  const [farmaci, setFarmaci] = useState(function () {
+    try { var s = localStorage.getItem("anamnesi-farmaci"); return s ? JSON.parse(s) : DEFAULT_FARMACI; } catch (e) { return DEFAULT_FARMACI; }
+  });
+  const [showRxForm, setShowRxForm] = useState(false);
+  const [rxEditIdx, setRxEditIdx] = useState(null);
+  const [rxFormName, setRxFormName] = useState("");
+  const [rxFormDose, setRxFormDose] = useState("");
+  const [rxFormFreq, setRxFormFreq] = useState("");
+  const [rxFormPurpose, setRxFormPurpose] = useState("");
+
+  /* --- Integratori state --- */
+  const [integratori, setIntegratori] = useState(function () {
+    try { var s = localStorage.getItem("anamnesi-integratori"); return s ? JSON.parse(s) : DEFAULT_INTEGRATORI; } catch (e) { return DEFAULT_INTEGRATORI; }
+  });
+  const [showIntForm, setShowIntForm] = useState(false);
+  const [intEditIdx, setIntEditIdx] = useState(null);
+  const [intFormName, setIntFormName] = useState("");
+  const [intFormDose, setIntFormDose] = useState("");
+  const [intFormFreq, setIntFormFreq] = useState("");
+  const [intFormPurpose, setIntFormPurpose] = useState("");
   const [analysisResult, setAnalysisResult] = useState(function () {
     try { var stored = localStorage.getItem("anamnesi-analysis"); return stored ? JSON.parse(stored) : null; } catch (e) { return null; }
   });
@@ -351,6 +375,8 @@ export default function App() {
         if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
         if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
         if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
+        if (data.farmaci) { setFarmaci(data.farmaci); localStorage.setItem("anamnesi-farmaci", JSON.stringify(data.farmaci)); }
+        if (data.integratori) { setIntegratori(data.integratori); localStorage.setItem("anamnesi-integratori", JSON.stringify(data.integratori)); }
         localStorage.setItem("anamnesi-backup-full", JSON.stringify(data));
         setGhSyncMsg("Dati sincronizzati dal GitHub");
       } else {
@@ -1396,11 +1422,53 @@ export default function App() {
         {(tab === "farmaci" || printMode) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
+            {/* ── Rx section ── */}
             <div style={cardS}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
                 <span style={{ background: col.acc, color: "#fff", padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700" }}>Rx</span>
-                <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>Farmaci (prescrizione medica)</h3>
+                <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0, flex: 1 }}>Farmaci (prescrizione medica)</h3>
+                <button className="no-print" onClick={function () { setShowRxForm(!showRxForm); setRxEditIdx(null); setRxFormName(""); setRxFormDose(""); setRxFormFreq("Giornaliero"); setRxFormPurpose(""); }} style={{ padding: "4px 12px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.acc, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                  {showRxForm && rxEditIdx === null ? "Annulla" : "+ Aggiungi"}
+                </button>
               </div>
+              {(showRxForm) && (
+                <form className="no-print" onSubmit={function (evt) {
+                  evt.preventDefault();
+                  if (!rxFormName || !rxFormDose || !rxFormFreq) return;
+                  var entry = { name: rxFormName, dose: rxFormDose, freq: rxFormFreq, purpose: rxFormPurpose };
+                  var updated;
+                  if (rxEditIdx !== null) {
+                    updated = farmaci.map(function (m, i) { return i === rxEditIdx ? entry : m; });
+                  } else {
+                    updated = farmaci.concat([entry]);
+                  }
+                  setFarmaci(updated);
+                  localStorage.setItem("anamnesi-farmaci", JSON.stringify(updated));
+                  autoBackup(null, null, null, updated, null);
+                  setShowRxForm(false); setRxEditIdx(null); setRxFormName(""); setRxFormDose(""); setRxFormFreq(""); setRxFormPurpose("");
+                }} style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "flex-end", marginBottom: "14px", padding: "12px", background: "#fafaf8", borderRadius: "8px", borderLeft: "3px solid " + col.acc }}>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, flex: 2, minWidth: "140px" }}>
+                    Farmaco *
+                    <input type="text" value={rxFormName} onChange={function (e) { setRxFormName(e.target.value); }} placeholder="es. Candesartan EG" required style={inputS} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, minWidth: "90px" }}>
+                    Dose *
+                    <input type="text" value={rxFormDose} onChange={function (e) { setRxFormDose(e.target.value); }} placeholder="es. 8 mg" required style={{ ...inputS, width: "90px" }} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, minWidth: "110px" }}>
+                    Frequenza *
+                    <input type="text" value={rxFormFreq} onChange={function (e) { setRxFormFreq(e.target.value); }} placeholder="es. Giornaliero" required style={{ ...inputS, width: "110px" }} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, flex: 2, minWidth: "130px" }}>
+                    Utilizzo
+                    <input type="text" value={rxFormPurpose} onChange={function (e) { setRxFormPurpose(e.target.value); }} placeholder="es. Controllo pressione" style={inputS} />
+                  </label>
+                  <button type="submit" style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.acc, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                    {rxEditIdx !== null ? "Salva" : "Aggiungi"}
+                  </button>
+                  {rxEditIdx !== null && <button type="button" onClick={function () { setShowRxForm(false); setRxEditIdx(null); }} style={{ padding: "8px 12px", fontSize: "11px", color: col.mut, background: "transparent", border: "1px solid #ccc", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>}
+                </form>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {farmaci.map(function (med, i) {
                   return (
@@ -1415,17 +1483,63 @@ export default function App() {
                       <div style={{ minWidth: "80px" }}>
                         <span style={{ background: "#fff", padding: "3px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "500", color: col.mut }}>{med.freq}</span>
                       </div>
+                      <div className="no-print" style={{ display: "flex", gap: "4px" }}>
+                        <button onClick={function () { setRxEditIdx(i); setRxFormName(med.name); setRxFormDose(med.dose); setRxFormFreq(med.freq); setRxFormPurpose(med.purpose); setShowRxForm(true); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.acc, background: "transparent", border: "1px solid " + col.acc + "60", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✏</button>
+                        <button onClick={function () { if (!window.confirm("Eliminare " + med.name + "?")) return; var updated = farmaci.filter(function (_, j) { return j !== i; }); setFarmaci(updated); localStorage.setItem("anamnesi-farmaci", JSON.stringify(updated)); autoBackup(null, null, null, updated, null); }} style={{ padding: "3px 8px", fontSize: "10px", color: "#c00", background: "transparent", border: "1px solid #c0000060", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
 
+            {/* ── Integratori section ── */}
             <div style={cardS}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
                 <span style={{ background: col.grn, color: "#fff", padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700" }}>INT</span>
-                <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0 }}>Integratori e vitamine</h3>
+                <h3 style={{ fontSize: "14px", fontWeight: "600", margin: 0, flex: 1 }}>Integratori e vitamine</h3>
+                <button className="no-print" onClick={function () { setShowIntForm(!showIntForm); setIntEditIdx(null); setIntFormName(""); setIntFormDose(""); setIntFormFreq("Giornaliero"); setIntFormPurpose(""); }} style={{ padding: "4px 12px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.grn, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                  {showIntForm && intEditIdx === null ? "Annulla" : "+ Aggiungi"}
+                </button>
               </div>
+              {(showIntForm) && (
+                <form className="no-print" onSubmit={function (evt) {
+                  evt.preventDefault();
+                  if (!intFormName || !intFormDose || !intFormFreq) return;
+                  var entry = { name: intFormName, dose: intFormDose, freq: intFormFreq, purpose: intFormPurpose };
+                  var updated;
+                  if (intEditIdx !== null) {
+                    updated = integratori.map(function (m, i) { return i === intEditIdx ? entry : m; });
+                  } else {
+                    updated = integratori.concat([entry]);
+                  }
+                  setIntegratori(updated);
+                  localStorage.setItem("anamnesi-integratori", JSON.stringify(updated));
+                  autoBackup(null, null, null, null, updated);
+                  setShowIntForm(false); setIntEditIdx(null); setIntFormName(""); setIntFormDose(""); setIntFormFreq(""); setIntFormPurpose("");
+                }} style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "flex-end", marginBottom: "14px", padding: "12px", background: "#fafaf8", borderRadius: "8px", borderLeft: "3px solid " + col.grn }}>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, flex: 2, minWidth: "140px" }}>
+                    Integratore *
+                    <input type="text" value={intFormName} onChange={function (e) { setIntFormName(e.target.value); }} placeholder="es. Vitamina D" required style={inputS} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, minWidth: "90px" }}>
+                    Dose *
+                    <input type="text" value={intFormDose} onChange={function (e) { setIntFormDose(e.target.value); }} placeholder="es. 1 capsula" required style={{ ...inputS, width: "90px" }} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, minWidth: "110px" }}>
+                    Frequenza *
+                    <input type="text" value={intFormFreq} onChange={function (e) { setIntFormFreq(e.target.value); }} placeholder="es. Giornaliero" required style={{ ...inputS, width: "110px" }} />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.mut, flex: 2, minWidth: "130px" }}>
+                    Utilizzo
+                    <input type="text" value={intFormPurpose} onChange={function (e) { setIntFormPurpose(e.target.value); }} placeholder="es. Integrazione vitaminica" style={inputS} />
+                  </label>
+                  <button type="submit" style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.grn, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                    {intEditIdx !== null ? "Salva" : "Aggiungi"}
+                  </button>
+                  {intEditIdx !== null && <button type="button" onClick={function () { setShowIntForm(false); setIntEditIdx(null); }} style={{ padding: "8px 12px", fontSize: "11px", color: col.mut, background: "transparent", border: "1px solid #ccc", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>}
+                </form>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {integratori.map(function (med, i) {
                   return (
@@ -1439,6 +1553,10 @@ export default function App() {
                       </div>
                       <div style={{ minWidth: "80px" }}>
                         <span style={{ background: "#fff", padding: "3px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "500", color: col.mut }}>{med.freq}</span>
+                      </div>
+                      <div className="no-print" style={{ display: "flex", gap: "4px" }}>
+                        <button onClick={function () { setIntEditIdx(i); setIntFormName(med.name); setIntFormDose(med.dose); setIntFormFreq(med.freq); setIntFormPurpose(med.purpose); setShowIntForm(true); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.grn, background: "transparent", border: "1px solid " + col.grn + "60", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✏</button>
+                        <button onClick={function () { if (!window.confirm("Eliminare " + med.name + "?")) return; var updated = integratori.filter(function (_, j) { return j !== i; }); setIntegratori(updated); localStorage.setItem("anamnesi-integratori", JSON.stringify(updated)); autoBackup(null, null, null, null, updated); }} style={{ padding: "3px 8px", fontSize: "10px", color: "#c00", background: "transparent", border: "1px solid #c0000060", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✕</button>
                       </div>
                     </div>
                   );
@@ -1757,6 +1875,8 @@ export default function App() {
                             if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
                             if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
                             if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
+                            if (data.farmaci) { setFarmaci(data.farmaci); localStorage.setItem("anamnesi-farmaci", JSON.stringify(data.farmaci)); }
+                            if (data.integratori) { setIntegratori(data.integratori); localStorage.setItem("anamnesi-integratori", JSON.stringify(data.integratori)); }
                             localStorage.setItem("anamnesi-backup-full", JSON.stringify(data));
                           }
                           var now = new Date().toLocaleString("it-IT", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
