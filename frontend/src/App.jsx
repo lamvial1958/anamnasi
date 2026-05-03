@@ -90,6 +90,13 @@ const farmaciEstemporanei = [
   // { name: "Ibuprofene", dose: "400 mg", date: "2026-02-14", reason: "Cefalea intensa" },
 ];
 
+function getActivePeriodo(med) {
+  if (!med.periodi || med.periodi.length === 0) return null;
+  var active = med.periodi.find(function (p) { return !p.to; });
+  if (!active) active = med.periodi.slice().sort(function (a, b) { return b.from > a.from ? 1 : -1; })[0];
+  return active;
+}
+
 /* --- Weight tracking data (Feature 3) --- */
 const defaultWeightData = [
   { date: "2026-01-19", kg: 130.0 },
@@ -337,6 +344,12 @@ export default function App() {
   const [intFormDose, setIntFormDose] = useState("");
   const [intFormFreq, setIntFormFreq] = useState("");
   const [intFormPurpose, setIntFormPurpose] = useState("");
+
+  /* --- Periodo dosaggio state --- */
+  const [periodoOpenKey, setPeriodoOpenKey] = useState(null); // 'rx-2', 'int-0'
+  const [periodoForm, setPeriodoForm] = useState(null);
+  // { section:'rx'|'int', medIdx, editIdx:null|number, from, to, dose, freq }
+
   const [analysisResult, setAnalysisResult] = useState(function () {
     try { var stored = localStorage.getItem("anamnesi-analysis"); return stored ? JSON.parse(stored) : null; } catch (e) { return null; }
   });
@@ -1471,22 +1484,67 @@ export default function App() {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {farmaci.map(function (med, i) {
+                  var ap = getActivePeriodo(med);
+                  var myKey = "rx-" + i;
+                  var isOpen = periodoOpenKey === myKey;
+                  var nPrd = med.periodi ? med.periodi.length : 0;
                   return (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: col.accL, borderRadius: "8px", borderLeft: "3px solid " + col.acc, flexWrap: "wrap" }}>
-                      <div style={{ flex: 2, minWidth: "160px" }}>
-                        <div style={{ fontSize: "13px", fontWeight: "600", color: col.txt }}>{med.name}</div>
-                        <div style={{ fontSize: "10px", color: col.mut, marginTop: "2px" }}>{med.purpose}</div>
+                    <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: col.accL, borderRadius: isOpen ? "8px 8px 0 0" : "8px", borderLeft: "3px solid " + col.acc, flexWrap: "wrap" }}>
+                        <div style={{ flex: 2, minWidth: "160px" }}>
+                          <div style={{ fontSize: "13px", fontWeight: "600", color: col.txt }}>{med.name}</div>
+                          <div style={{ fontSize: "10px", color: col.mut, marginTop: "2px" }}>{med.purpose}</div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: "80px" }}>
+                          <div style={{ fontSize: "11px", fontWeight: "600", color: col.acc }}>{ap ? ap.dose : med.dose}</div>
+                        </div>
+                        <div style={{ minWidth: "80px" }}>
+                          <span style={{ background: "#fff", padding: "3px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "500", color: col.mut }}>{ap ? ap.freq : med.freq}</span>
+                        </div>
+                        <div className="no-print" style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                          <button onClick={function () { setPeriodoOpenKey(isOpen ? null : myKey); setPeriodoForm(null); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.acc, background: isOpen ? "#e8eaf6" : "transparent", border: "1px solid " + col.acc + "60", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>{nPrd > 0 ? nPrd + " prd " : ""}{"Periodi " + (isOpen ? "▲" : "▾")}</button>
+                          <button onClick={function () { setRxEditIdx(i); setRxFormName(med.name); setRxFormDose(med.dose); setRxFormFreq(med.freq); setRxFormPurpose(med.purpose); setShowRxForm(true); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.acc, background: "transparent", border: "1px solid " + col.acc + "60", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✏</button>
+                          <button onClick={function () { if (!window.confirm("Eliminare " + med.name + "?")) return; var updated = farmaci.filter(function (_, j) { return j !== i; }); setFarmaci(updated); localStorage.setItem("anamnesi-farmaci", JSON.stringify(updated)); autoBackup(null, null, null, updated, null); }} style={{ padding: "3px 8px", fontSize: "10px", color: "#c00", background: "transparent", border: "1px solid #c0000060", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                        </div>
                       </div>
-                      <div style={{ flex: 1, minWidth: "80px" }}>
-                        <div style={{ fontSize: "11px", fontWeight: "600", color: col.acc }}>{med.dose}</div>
-                      </div>
-                      <div style={{ minWidth: "80px" }}>
-                        <span style={{ background: "#fff", padding: "3px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "500", color: col.mut }}>{med.freq}</span>
-                      </div>
-                      <div className="no-print" style={{ display: "flex", gap: "4px" }}>
-                        <button onClick={function () { setRxEditIdx(i); setRxFormName(med.name); setRxFormDose(med.dose); setRxFormFreq(med.freq); setRxFormPurpose(med.purpose); setShowRxForm(true); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.acc, background: "transparent", border: "1px solid " + col.acc + "60", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✏</button>
-                        <button onClick={function () { if (!window.confirm("Eliminare " + med.name + "?")) return; var updated = farmaci.filter(function (_, j) { return j !== i; }); setFarmaci(updated); localStorage.setItem("anamnesi-farmaci", JSON.stringify(updated)); autoBackup(null, null, null, updated, null); }} style={{ padding: "3px 8px", fontSize: "10px", color: "#c00", background: "transparent", border: "1px solid #c0000060", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✕</button>
-                      </div>
+                      {isOpen && (
+                        <div className="no-print" style={{ padding: "10px 14px", background: "#f0f1f8", borderRadius: "0 0 8px 8px", borderLeft: "3px solid " + col.acc, borderBottom: "1px solid " + col.acc + "30", borderRight: "1px solid " + col.acc + "20" }}>
+                          {(med.periodi || []).map(function (p, pi) {
+                            return (
+                              <div key={pi} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 0", fontSize: "11px", borderBottom: pi < (med.periodi.length - 1) ? "1px solid #dde" : "none", flexWrap: "wrap" }}>
+                                <span style={{ color: col.mut, minWidth: "82px" }}>{p.from}</span>
+                                <span style={{ color: col.mut }}>→</span>
+                                <span style={{ minWidth: "82px", fontWeight: !p.to ? "700" : "400", color: !p.to ? col.acc : col.mut }}>{p.to || "in corso"}</span>
+                                <span style={{ fontWeight: "600", flex: 1, minWidth: "60px" }}>{p.dose}</span>
+                                <span style={{ color: col.mut, flex: 1, minWidth: "80px" }}>{p.freq}</span>
+                                <button onClick={function () { setPeriodoForm({ section: "rx", medIdx: i, editIdx: pi, from: p.from, to: p.to || "", dose: p.dose, freq: p.freq }); }} style={{ padding: "2px 6px", fontSize: "10px", color: col.acc, background: "transparent", border: "1px solid " + col.acc + "40", borderRadius: "3px", cursor: "pointer", fontFamily: "inherit" }}>✏</button>
+                                <button onClick={function () { var periodi = (med.periodi || []).filter(function (_, j) { return j !== pi; }); var updated = farmaci.map(function (m, j) { return j === i ? Object.assign({}, m, { periodi: periodi }) : m; }); setFarmaci(updated); localStorage.setItem("anamnesi-farmaci", JSON.stringify(updated)); autoBackup(null, null, null, updated, null); }} style={{ padding: "2px 6px", fontSize: "10px", color: "#c00", background: "transparent", border: "1px solid #c0000040", borderRadius: "3px", cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                              </div>
+                            );
+                          })}
+                          {periodoForm && periodoForm.section === "rx" && periodoForm.medIdx === i ? (
+                            <form onSubmit={function (evt) {
+                              evt.preventDefault();
+                              if (!periodoForm.from || !periodoForm.dose || !periodoForm.freq) return;
+                              var newP = { from: periodoForm.from, to: periodoForm.to || null, dose: periodoForm.dose, freq: periodoForm.freq };
+                              var periodi = med.periodi ? med.periodi.slice() : [];
+                              if (periodoForm.editIdx !== null) { periodi = periodi.map(function (p, j) { return j === periodoForm.editIdx ? newP : p; }); }
+                              else { periodi = periodi.concat([newP]).sort(function (a, b) { return a.from < b.from ? -1 : 1; }); }
+                              var updated = farmaci.map(function (m, j) { return j === i ? Object.assign({}, m, { periodi: periodi }) : m; });
+                              setFarmaci(updated); localStorage.setItem("anamnesi-farmaci", JSON.stringify(updated)); autoBackup(null, null, null, updated, null); setPeriodoForm(null);
+                            }} style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "flex-end", marginTop: "8px", padding: "8px", background: "#fff", borderRadius: "6px", border: "1px solid " + col.acc + "40" }}>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: col.mut }}>Da *<input type="date" value={periodoForm.from} onChange={function (e) { setPeriodoForm(Object.assign({}, periodoForm, { from: e.target.value })); }} required style={{ ...inputS, width: "130px" }} /></label>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: col.mut }}>A (vuoto = in corso)<input type="date" value={periodoForm.to} onChange={function (e) { setPeriodoForm(Object.assign({}, periodoForm, { to: e.target.value })); }} style={{ ...inputS, width: "130px" }} /></label>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: col.mut }}>Dose *<input type="text" value={periodoForm.dose} onChange={function (e) { setPeriodoForm(Object.assign({}, periodoForm, { dose: e.target.value })); }} placeholder="es. 25 mg" required style={{ ...inputS, width: "90px" }} /></label>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: col.mut }}>Frequenza *<input type="text" value={periodoForm.freq} onChange={function (e) { setPeriodoForm(Object.assign({}, periodoForm, { freq: e.target.value })); }} placeholder="es. 1x/notte" required style={{ ...inputS, width: "100px" }} /></label>
+                              <button type="submit" style={{ padding: "7px 14px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.acc, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>{periodoForm.editIdx !== null ? "Salva" : "Aggiungi"}</button>
+                              <button type="button" onClick={function () { setPeriodoForm(null); }} style={{ padding: "7px 10px", fontSize: "11px", color: col.mut, background: "transparent", border: "1px solid #ccc", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                            </form>
+                          ) : (
+                            <button onClick={function () { setPeriodoForm({ section: "rx", medIdx: i, editIdx: null, from: new Date().toISOString().slice(0, 10), to: "", dose: "", freq: "" }); }} style={{ marginTop: nPrd > 0 ? "8px" : "2px", padding: "4px 10px", fontSize: "10px", color: col.acc, background: "transparent", border: "1px dashed " + col.acc + "80", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>+ Aggiungi periodo</button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1542,22 +1600,67 @@ export default function App() {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {integratori.map(function (med, i) {
+                  var ap = getActivePeriodo(med);
+                  var myKey = "int-" + i;
+                  var isOpen = periodoOpenKey === myKey;
+                  var nPrd = med.periodi ? med.periodi.length : 0;
                   return (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: col.grnL, borderRadius: "8px", borderLeft: "3px solid " + col.grn, flexWrap: "wrap" }}>
-                      <div style={{ flex: 2, minWidth: "160px" }}>
-                        <div style={{ fontSize: "13px", fontWeight: "600", color: col.txt }}>{med.name}</div>
-                        <div style={{ fontSize: "10px", color: col.mut, marginTop: "2px" }}>{med.purpose}</div>
+                    <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: col.grnL, borderRadius: isOpen ? "8px 8px 0 0" : "8px", borderLeft: "3px solid " + col.grn, flexWrap: "wrap" }}>
+                        <div style={{ flex: 2, minWidth: "160px" }}>
+                          <div style={{ fontSize: "13px", fontWeight: "600", color: col.txt }}>{med.name}</div>
+                          <div style={{ fontSize: "10px", color: col.mut, marginTop: "2px" }}>{med.purpose}</div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: "80px" }}>
+                          <div style={{ fontSize: "11px", fontWeight: "600", color: col.grn }}>{ap ? ap.dose : med.dose}</div>
+                        </div>
+                        <div style={{ minWidth: "80px" }}>
+                          <span style={{ background: "#fff", padding: "3px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "500", color: col.mut }}>{ap ? ap.freq : med.freq}</span>
+                        </div>
+                        <div className="no-print" style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                          <button onClick={function () { setPeriodoOpenKey(isOpen ? null : myKey); setPeriodoForm(null); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.grn, background: isOpen ? "#e8f5e9" : "transparent", border: "1px solid " + col.grn + "60", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>{nPrd > 0 ? nPrd + " prd " : ""}{"Periodi " + (isOpen ? "▲" : "▾")}</button>
+                          <button onClick={function () { setIntEditIdx(i); setIntFormName(med.name); setIntFormDose(med.dose); setIntFormFreq(med.freq); setIntFormPurpose(med.purpose); setShowIntForm(true); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.grn, background: "transparent", border: "1px solid " + col.grn + "60", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✏</button>
+                          <button onClick={function () { if (!window.confirm("Eliminare " + med.name + "?")) return; var updated = integratori.filter(function (_, j) { return j !== i; }); setIntegratori(updated); localStorage.setItem("anamnesi-integratori", JSON.stringify(updated)); autoBackup(null, null, null, null, updated); }} style={{ padding: "3px 8px", fontSize: "10px", color: "#c00", background: "transparent", border: "1px solid #c0000060", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                        </div>
                       </div>
-                      <div style={{ flex: 1, minWidth: "80px" }}>
-                        <div style={{ fontSize: "11px", fontWeight: "600", color: col.grn }}>{med.dose}</div>
-                      </div>
-                      <div style={{ minWidth: "80px" }}>
-                        <span style={{ background: "#fff", padding: "3px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "500", color: col.mut }}>{med.freq}</span>
-                      </div>
-                      <div className="no-print" style={{ display: "flex", gap: "4px" }}>
-                        <button onClick={function () { setIntEditIdx(i); setIntFormName(med.name); setIntFormDose(med.dose); setIntFormFreq(med.freq); setIntFormPurpose(med.purpose); setShowIntForm(true); }} style={{ padding: "3px 8px", fontSize: "10px", color: col.grn, background: "transparent", border: "1px solid " + col.grn + "60", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✏</button>
-                        <button onClick={function () { if (!window.confirm("Eliminare " + med.name + "?")) return; var updated = integratori.filter(function (_, j) { return j !== i; }); setIntegratori(updated); localStorage.setItem("anamnesi-integratori", JSON.stringify(updated)); autoBackup(null, null, null, null, updated); }} style={{ padding: "3px 8px", fontSize: "10px", color: "#c00", background: "transparent", border: "1px solid #c0000060", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>✕</button>
-                      </div>
+                      {isOpen && (
+                        <div className="no-print" style={{ padding: "10px 14px", background: "#f0f8f1", borderRadius: "0 0 8px 8px", borderLeft: "3px solid " + col.grn, borderBottom: "1px solid " + col.grn + "30", borderRight: "1px solid " + col.grn + "20" }}>
+                          {(med.periodi || []).map(function (p, pi) {
+                            return (
+                              <div key={pi} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 0", fontSize: "11px", borderBottom: pi < (med.periodi.length - 1) ? "1px solid #cde" : "none", flexWrap: "wrap" }}>
+                                <span style={{ color: col.mut, minWidth: "82px" }}>{p.from}</span>
+                                <span style={{ color: col.mut }}>→</span>
+                                <span style={{ minWidth: "82px", fontWeight: !p.to ? "700" : "400", color: !p.to ? col.grn : col.mut }}>{p.to || "in corso"}</span>
+                                <span style={{ fontWeight: "600", flex: 1, minWidth: "60px" }}>{p.dose}</span>
+                                <span style={{ color: col.mut, flex: 1, minWidth: "80px" }}>{p.freq}</span>
+                                <button onClick={function () { setPeriodoForm({ section: "int", medIdx: i, editIdx: pi, from: p.from, to: p.to || "", dose: p.dose, freq: p.freq }); }} style={{ padding: "2px 6px", fontSize: "10px", color: col.grn, background: "transparent", border: "1px solid " + col.grn + "40", borderRadius: "3px", cursor: "pointer", fontFamily: "inherit" }}>✏</button>
+                                <button onClick={function () { var periodi = (med.periodi || []).filter(function (_, j) { return j !== pi; }); var updated = integratori.map(function (m, j) { return j === i ? Object.assign({}, m, { periodi: periodi }) : m; }); setIntegratori(updated); localStorage.setItem("anamnesi-integratori", JSON.stringify(updated)); autoBackup(null, null, null, null, updated); }} style={{ padding: "2px 6px", fontSize: "10px", color: "#c00", background: "transparent", border: "1px solid #c0000040", borderRadius: "3px", cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                              </div>
+                            );
+                          })}
+                          {periodoForm && periodoForm.section === "int" && periodoForm.medIdx === i ? (
+                            <form onSubmit={function (evt) {
+                              evt.preventDefault();
+                              if (!periodoForm.from || !periodoForm.dose || !periodoForm.freq) return;
+                              var newP = { from: periodoForm.from, to: periodoForm.to || null, dose: periodoForm.dose, freq: periodoForm.freq };
+                              var periodi = med.periodi ? med.periodi.slice() : [];
+                              if (periodoForm.editIdx !== null) { periodi = periodi.map(function (p, j) { return j === periodoForm.editIdx ? newP : p; }); }
+                              else { periodi = periodi.concat([newP]).sort(function (a, b) { return a.from < b.from ? -1 : 1; }); }
+                              var updated = integratori.map(function (m, j) { return j === i ? Object.assign({}, m, { periodi: periodi }) : m; });
+                              setIntegratori(updated); localStorage.setItem("anamnesi-integratori", JSON.stringify(updated)); autoBackup(null, null, null, null, updated); setPeriodoForm(null);
+                            }} style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "flex-end", marginTop: "8px", padding: "8px", background: "#fff", borderRadius: "6px", border: "1px solid " + col.grn + "40" }}>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: col.mut }}>Da *<input type="date" value={periodoForm.from} onChange={function (e) { setPeriodoForm(Object.assign({}, periodoForm, { from: e.target.value })); }} required style={{ ...inputS, width: "130px" }} /></label>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: col.mut }}>A (vuoto = in corso)<input type="date" value={periodoForm.to} onChange={function (e) { setPeriodoForm(Object.assign({}, periodoForm, { to: e.target.value })); }} style={{ ...inputS, width: "130px" }} /></label>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: col.mut }}>Dose *<input type="text" value={periodoForm.dose} onChange={function (e) { setPeriodoForm(Object.assign({}, periodoForm, { dose: e.target.value })); }} placeholder="es. 25 mg" required style={{ ...inputS, width: "90px" }} /></label>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: col.mut }}>Frequenza *<input type="text" value={periodoForm.freq} onChange={function (e) { setPeriodoForm(Object.assign({}, periodoForm, { freq: e.target.value })); }} placeholder="es. 1x/notte" required style={{ ...inputS, width: "100px" }} /></label>
+                              <button type="submit" style={{ padding: "7px 14px", fontSize: "11px", fontWeight: "600", color: "#fff", background: col.grn, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>{periodoForm.editIdx !== null ? "Salva" : "Aggiungi"}</button>
+                              <button type="button" onClick={function () { setPeriodoForm(null); }} style={{ padding: "7px 10px", fontSize: "11px", color: col.mut, background: "transparent", border: "1px solid #ccc", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                            </form>
+                          ) : (
+                            <button onClick={function () { setPeriodoForm({ section: "int", medIdx: i, editIdx: null, from: new Date().toISOString().slice(0, 10), to: "", dose: "", freq: "" }); }} style={{ marginTop: nPrd > 0 ? "8px" : "2px", padding: "4px 10px", fontSize: "10px", color: col.grn, background: "transparent", border: "1px dashed " + col.grn + "80", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit" }}>+ Aggiungi periodo</button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
