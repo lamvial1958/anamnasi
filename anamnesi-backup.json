@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-03T09:05:45.248Z",
+  "exportDate": "2026-05-03T09:10:08.921Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -810,7 +810,15 @@
       "name": "Aura Stop",
       "dose": "1 capsula mattina + 1 sera",
       "freq": "2x / giorno",
-      "purpose": "Profilassi emicrania con aura"
+      "purpose": "Profilassi emicrania con aura",
+      "periodi": [
+        {
+          "from": "2025-07-01",
+          "to": "2026-03-30",
+          "dose": "2 g",
+          "freq": "1x/mattina + 1x/notte"
+        }
+      ]
     }
   ]
 }
