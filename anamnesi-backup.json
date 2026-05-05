@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-04T07:10:07.637Z",
+  "exportDate": "2026-05-05T06:23:10.260Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -776,7 +776,15 @@
       "name": "Rosuvastatina + Ezetimibe Teva",
       "dose": "20 mg / 10 mg",
       "freq": "Giornaliero",
-      "purpose": "Controllo colesterolo"
+      "purpose": "Controllo colesterolo",
+      "periodi": [
+        {
+          "from": "2026-05-01",
+          "to": "2026-05-08",
+          "dose": "50 mg",
+          "freq": "1x/notte"
+        }
+      ]
     },
     {
       "name": "Candesartan EG Stada",
