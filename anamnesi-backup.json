@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-11T06:41:59.624Z",
+  "exportDate": "2026-05-12T06:59:33.099Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -733,6 +733,18 @@
       "migraineContext": null,
       "alcohol": null,
       "notes": "Spumante e vino"
+    },
+    {
+      "date": "2026-05-12",
+      "bp": "115/65",
+      "kg": null,
+      "sleepHours": 8,
+      "sleepQuality": "buona",
+      "migraine": false,
+      "migraineTime": null,
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": null
     }
   ],
   "analysis": {
