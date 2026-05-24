@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-24T08:40:02.618Z",
+  "exportDate": "2026-05-24T08:42:18.033Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -1131,6 +1131,12 @@
       "freq": "Giornaliero",
       "purpose": "Controllo crisi emicrania",
       "periodi": [
+        {
+          "from": "2026-05-10",
+          "to": null,
+          "dose": "75 mg",
+          "freq": "1x/notte"
+        },
         {
           "from": "2026-05-23",
           "to": "2026-05-29",
