@@ -774,7 +774,9 @@ export default function App() {
       hypotheses.push({ id: "H3", title: "Componente posturale/visiva occupazionale", text: afternoonPct + "% degli episodi è pomeridiano con " + workEps.length + " correlati a lavoro/computer. Possibile ruolo di affaticamento visivo cumulativo, postura mantenuta e luce blu.", color: col.blu });
     }
     if (parseFloat(postRate) >= parseFloat(preRate)) {
-      hypotheses.push({ id: "H4", title: "Esclusione del trigger alimentare", text: "Post-dieta: frequenza " + postRate + " ep./mese (era " + preRate + "). L'eliminazione di alcol e dolci non ha ridotto la frequenza, suggerendo che non sono trigger primari. La PA è migliorata indipendentemente.", color: col.grn });
+      var alcoolDiaryDays = dailyLog.filter(function(e) { return e.alcoholDay; }).length;
+      var alcoolNote = alcoolDiaryDays > 0 ? " Nel diario: " + alcoolDiaryDays + " giorni con consumo registrato." : "";
+      hypotheses.push({ id: "H4", title: "Esclusione del trigger alimentare", text: "Post-dieta: frequenza " + postRate + " ep./mese (era " + preRate + "). L'eliminazione di alcol e dolci non ha ridotto la frequenza, suggerendo che non sono trigger primari. La PA è migliorata indipendentemente." + alcoolNote, color: col.grn });
     }
     if (auraEps.length >= 2) {
       hypotheses.push({ id: "H5", title: "Monitorare progressione dell'aura", text: auraEps.length + " episodi con aura documentata. Valutare con la neurologista se pattern atipici richiedono approfondimenti (es. RM encefalo).", color: col.acc });
@@ -815,6 +817,39 @@ export default function App() {
     if (topContexts.length > 0) {
       var ctxText = "Contesti più frequenti: " + topContexts.map(function (c) { return "\"" + c.ctx + "\" (" + c.count + "x)"; }).join(", ") + ".";
       result.correlazioni.push({ n: "C3", title: "Contesti/Trigger", text: ctxText, color: col.amb });
+    }
+
+    /* C4: Alcol × Emicrania */
+    var alcoolLogDays = dailyLog.filter(function(e) { return e.alcoholDay; });
+    if (alcoolLogDays.length >= 3) {
+      var alcoolDatesC4 = alcoolLogDays.map(function(e) { return e.date; });
+      var migLogDates = dailyLog.filter(function(e) { return e.migraine; }).map(function(e) { return e.date; });
+      var migAfterAlcool = migLogDates.filter(function(d) {
+        var prev = new Date(new Date(d).getTime() - 86400000).toISOString().slice(0, 10);
+        return alcoolDatesC4.indexOf(prev) >= 0;
+      }).length;
+      var alcoolMigSame = alcoolLogDays.filter(function(e) { return e.migraine; }).length;
+      var c4text = "Giorni con alcol registrati: " + alcoolLogDays.length + ". Stesso giorno: " + alcoolMigSame + " ep. Giorno successivo: " + migAfterAlcool + " ep.";
+      c4text += migAfterAlcool >= 2 ? " Possibile correlazione il giorno seguente — da monitorare." : " Nessuna correlazione evidente con la giornata successiva.";
+      result.correlazioni.push({ n: "C4", title: "Alcol × Emicrania", text: c4text, color: migAfterAlcool >= 2 ? col.acc : col.grn });
+    } else {
+      result.correlazioni.push({ n: "C4", title: "Alcol × Emicrania", text: "Dati insufficienti (" + alcoolLogDays.length + " giorni con alcol). Registrare il consumo giornaliero per abilitare questa analisi.", color: col.mut });
+    }
+
+    /* C5: Lateralizzazione × Intensità */
+    var withLatoData = dailyLog.filter(function(e) { return e.migraine && e.migraineLato; });
+    var withIntData = dailyLog.filter(function(e) { return e.migraine && e.migraineIntensita != null; });
+    if (withLatoData.length >= 2 || withIntData.length >= 2) {
+      var latoC = { sinistra: 0, centrale: 0, destra: 0 };
+      withLatoData.forEach(function(e) { if (latoC[e.migraineLato] !== undefined) latoC[e.migraineLato]++; });
+      var dominantLato = withLatoData.length > 0 ? Object.keys(latoC).sort(function(a, b) { return latoC[b] - latoC[a]; })[0] : null;
+      var avgIntSint = withIntData.length ? (withIntData.reduce(function(a, b) { return a + b.migraineIntensita; }, 0) / withIntData.length).toFixed(1) : null;
+      var c5text = "";
+      if (withLatoData.length >= 2) { c5text += "Lato su " + withLatoData.length + " ep.: sin. " + latoC.sinistra + ", centrale " + latoC.centrale + ", des. " + latoC.destra + (dominantLato ? " — prevalenza " + dominantLato + "." : "."); }
+      if (withIntData.length >= 2) { c5text += (c5text ? " " : "") + "Intensità media: " + avgIntSint + "/10 su " + withIntData.length + " ep."; }
+      result.correlazioni.push({ n: "C5", title: "Lateralizzazione × Intensità", text: c5text, color: col.amb });
+    } else {
+      result.correlazioni.push({ n: "C5", title: "Lateralizzazione × Intensità", text: "Dati insufficienti. Registrare lato e intensità negli episodi per abilitare.", color: col.mut });
     }
 
     setAnalysisResult(result);
@@ -1356,6 +1391,46 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Alcol e Emicrania */}
+            {(function () {
+              var alcoolDays = dailyLog.filter(function (e) { return e.alcoholDay; });
+              if (alcoolDays.length === 0) return null;
+              var totalDiaryDays = dailyLog.length;
+              var typeCounts = { vino: 0, spumante: 0, distillato: 0, fermentato: 0 };
+              var typeLabels = { vino: "Vino", spumante: "Spumante/Champagne", distillato: "Distillato", fermentato: "Fermentato/Birra" };
+              alcoolDays.forEach(function (e) {
+                if (e.alcoholTypes) { e.alcoholTypes.forEach(function (t) { if (typeCounts[t.type] !== undefined) typeCounts[t.type]++; }); }
+              });
+              var alcoolMigSameDay = alcoolDays.filter(function (e) { return e.migraine; }).length;
+              var alcoolDates = alcoolDays.map(function (e) { return e.date; });
+              var migDates = dailyLog.filter(function (e) { return e.migraine; }).map(function (e) { return e.date; });
+              var migAfterAlcool = migDates.filter(function (d) {
+                var prev = new Date(new Date(d).getTime() - 86400000).toISOString().slice(0, 10);
+                return alcoolDates.indexOf(prev) >= 0;
+              }).length;
+              var alcoolPct = totalDiaryDays > 0 ? Math.round(alcoolDays.length / totalDiaryDays * 100) : 0;
+              var typeMax = Math.max.apply(null, Object.values(typeCounts).concat([1]));
+              return (
+                <div style={cardS}>
+                  <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px" }}>Alcol e Emicrania</h3>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
+                    <Stat label="Giorni con alcol" value={alcoolDays.length} sub={alcoolPct + "% del diario"} color={col.amb} />
+                    <Stat label="Alcol + emicrania stesso giorno" value={alcoolMigSameDay} sub={"su " + alcoolDays.length + " giorni con alcol"} color={alcoolMigSameDay > 0 ? col.acc : col.grn} />
+                    <Stat label="Emicrania il giorno dopo" value={migAfterAlcool} sub={"ep. analizzati: " + migDates.length} color={migAfterAlcool >= 2 ? col.acc : col.grn} />
+                  </div>
+                  {Object.keys(typeCounts).map(function (t) {
+                    return typeCounts[t] > 0 ? <Bar key={t} value={typeCounts[t]} max={typeMax} color={col.amb} label={typeLabels[t]} text={typeCounts[t] + "x"} /> : null;
+                  })}
+                  {migAfterAlcool >= 2 && (
+                    <Alert bg={col.accL} border={col.acc} color={col.acc}><strong>Attenzione:</strong> {migAfterAlcool} episodi si sono verificati il giorno dopo il consumo di alcol — possibile correlazione da monitorare.</Alert>
+                  )}
+                  {migAfterAlcool < 2 && alcoolDays.length >= 5 && (
+                    <Alert bg={col.grnL} border={col.grn} color={col.grn}>Nessuna correlazione evidente tra alcol e emicrania il giorno successivo.</Alert>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           );
         })()}
@@ -1387,6 +1462,40 @@ export default function App() {
               </div>
               <div style={{ fontSize: "11px", color: col.mut, fontStyle: "italic" }}>Entrambi sono eccezioni allo schema abituale centralizzato.</div>
             </div>
+
+            {/* Lateralizzazione e Intensità (da dailyLog) */}
+            {(function () {
+              var migEntries = dailyLog.filter(function (e) { return e.migraine; });
+              var withLato = migEntries.filter(function (e) { return e.migraineLato; });
+              var withInt = migEntries.filter(function (e) { return e.migraineIntensita != null; });
+              if (withLato.length === 0 && withInt.length === 0) return null;
+              var latoCount = { sinistra: 0, centrale: 0, destra: 0 };
+              withLato.forEach(function (e) { if (latoCount[e.migraineLato] !== undefined) latoCount[e.migraineLato]++; });
+              var latoMax = Math.max(latoCount.sinistra, latoCount.centrale, latoCount.destra, 1);
+              var avgInt = withInt.length ? (withInt.reduce(function (a, b) { return a + b.migraineIntensita; }, 0) / withInt.length).toFixed(1) : null;
+              var maxInt = withInt.length ? Math.max.apply(null, withInt.map(function (e) { return e.migraineIntensita; })) : null;
+              var minInt = withInt.length ? Math.min.apply(null, withInt.map(function (e) { return e.migraineIntensita; })) : null;
+              return (
+                <div style={cardS}>
+                  <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px" }}>Lateralizzazione e Intensità ({migEntries.length} ep. registrati nel diario)</h3>
+                  {withLato.length > 0 && (
+                    <div style={{ marginBottom: "14px" }}>
+                      <div style={{ fontSize: "11px", fontWeight: "600", color: col.mut, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Localizzazione del dolore ({withLato.length} ep.)</div>
+                      <Bar value={latoCount.sinistra} max={latoMax} color={col.blu} label="← Sinistra" text={latoCount.sinistra + "x (" + Math.round(latoCount.sinistra / withLato.length * 100) + "%)"} />
+                      <Bar value={latoCount.centrale} max={latoMax} color={col.amb} label="↔ Centrale" text={latoCount.centrale + "x (" + Math.round(latoCount.centrale / withLato.length * 100) + "%)"} />
+                      <Bar value={latoCount.destra} max={latoMax} color={col.acc} label="→ Destra" text={latoCount.destra + "x (" + Math.round(latoCount.destra / withLato.length * 100) + "%)"} />
+                    </div>
+                  )}
+                  {withInt.length > 0 && (
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      <Stat label="Intensità media" value={avgInt + "/10"} sub={withInt.length + " ep. con dato"} color={parseFloat(avgInt) >= 7 ? col.acc : parseFloat(avgInt) >= 5 ? col.amb : col.grn} />
+                      <Stat label="Massima" value={maxInt + "/10"} color={col.acc} />
+                      <Stat label="Minima" value={minInt + "/10"} color={col.grn} />
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
