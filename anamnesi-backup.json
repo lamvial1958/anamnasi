@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-24T08:38:05.449Z",
+  "exportDate": "2026-05-24T08:38:14.569Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -659,7 +659,16 @@
       "migraine": false,
       "migraineTime": null,
       "migraineContext": null,
-      "alcohol": null,
+      "migraineLato": null,
+      "migraineIntensita": null,
+      "alcohol": "Sì",
+      "alcoholDay": true,
+      "alcoholTypes": [
+        {
+          "type": "vino",
+          "qty": null
+        }
+      ],
       "notes": "Cena con vino"
     },
     {
