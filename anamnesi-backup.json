@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-24T08:16:06.593Z",
+  "exportDate": "2026-05-24T08:16:42.985Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -840,7 +840,7 @@
       "migraineTime": null,
       "migraineContext": null,
       "alcohol": null,
-      "notes": null
+      "notes": "Vino"
     },
     {
       "date": "2026-05-24",
