@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-24T08:37:30.745Z",
+  "exportDate": "2026-05-24T08:37:35.377Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -795,7 +795,11 @@
       "migraine": false,
       "migraineTime": null,
       "migraineContext": null,
-      "alcohol": null,
+      "migraineLato": null,
+      "migraineIntensita": null,
+      "alcohol": "Sì",
+      "alcoholDay": true,
+      "alcoholTypes": null,
       "notes": "Cena abbondante e molto vino"
     },
     {
