@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-24T08:14:21.705Z",
+  "exportDate": "2026-05-24T08:15:18.937Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -877,6 +877,18 @@
       "migraineContext": null,
       "alcohol": "Sì",
       "notes": null
+    },
+    {
+      "date": "2026-05-22",
+      "bp": "105/65",
+      "kg": null,
+      "sleepHours": 8.5,
+      "sleepQuality": "buona",
+      "migraine": true,
+      "migraineTime": "15:14",
+      "migraineContext": null,
+      "alcohol": null,
+      "notes": "Episódio quase imperceptívele muito rápido"
     }
   ],
   "analysis": {
