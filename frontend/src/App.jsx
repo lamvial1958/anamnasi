@@ -278,7 +278,7 @@ export default function App() {
       wd: calcWd(entry.date),
       time: entry.migraineTime || null,
       bp: bp,
-      alcohol: entry.alcohol || null,
+      alcohol: entry.alcoholDay ? "Sì" : (entry.alcohol || null),
       context: entry.migraineContext || null,
       src: "D"
     };
@@ -306,7 +306,17 @@ export default function App() {
   const [formMigraine, setFormMigraine] = useState(false);
   const [formTime, setFormTime] = useState("");
   const [formContext, setFormContext] = useState("");
-  const [formAlcohol, setFormAlcohol] = useState("");
+  const [formAlcoolGiorno, setFormAlcoolGiorno] = useState(false);
+  const [formAlcoolVino, setFormAlcoolVino] = useState(false);
+  const [formAlcoolVinoQty, setFormAlcoolVinoQty] = useState("");
+  const [formAlcoolSpumante, setFormAlcoolSpumante] = useState(false);
+  const [formAlcoolSpumanteQty, setFormAlcoolSpumanteQty] = useState("");
+  const [formAlcoolDistillato, setFormAlcoolDistillato] = useState(false);
+  const [formAlcoolDistillatoQty, setFormAlcoolDistillatoQty] = useState("");
+  const [formAlcoolFermentato, setFormAlcoolFermentato] = useState(false);
+  const [formAlcoolFermentatoQty, setFormAlcoolFermentatoQty] = useState("");
+  const [formMigraineLato, setFormMigraineLato] = useState("");
+  const [formMigraineIntensita, setFormMigraineIntensita] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [editingIdx, setEditingIdx] = useState(null);
   const [showStorico, setShowStorico] = useState(false);
@@ -359,6 +369,7 @@ export default function App() {
   const [ghToken, setGhToken] = useState("");
   const [ghSyncStatus, setGhSyncStatus] = useState(""); // "", "syncing", "ok", "error"
   const [ghSyncMsg, setGhSyncMsg] = useState("");
+  const [ghAuthError, setGhAuthError] = useState(false);
   const [ghLastSync, setGhLastSync] = useState(localStorage.getItem("anamnesi-github-lastsync") || "");
   const ghShaRef = useRef(null);
   const ghSaveTimer = useRef(null);
@@ -376,32 +387,26 @@ export default function App() {
       }
       ghShaRef.current = result.sha;
       var data = result.data;
-      /* Merge: GitHub data wins if it's newer than local */
-      var localDate = localStorage.getItem("anamnesi-backup-full");
-      var localExport = null;
-      try { localExport = localDate ? JSON.parse(localDate) : null; } catch (e) { /* ignore */ }
-      var ghDate = data.exportDate ? new Date(data.exportDate).getTime() : 0;
-      var loDate = localExport && localExport.exportDate ? new Date(localExport.exportDate).getTime() : 0;
-
-      if (ghDate >= loDate) {
-        /* GitHub is newer or same — restore from GitHub */
-        if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
-        if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
-        if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
-        if (data.farmaci) { setFarmaci(data.farmaci); localStorage.setItem("anamnesi-farmaci", JSON.stringify(data.farmaci)); }
-        if (data.integratori) { setIntegratori(data.integratori); localStorage.setItem("anamnesi-integratori", JSON.stringify(data.integratori)); }
-        localStorage.setItem("anamnesi-backup-full", JSON.stringify(data));
-        setGhSyncMsg("Dati sincronizzati dal GitHub");
-      } else {
-        setGhSyncMsg("Dati locali più recenti — verrà fatto upload");
-      }
+      /* GitHub is always authoritative on load — ensures mobile data appears on desktop */
+      if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
+      if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
+      if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
+      if (data.farmaci) { setFarmaci(data.farmaci); localStorage.setItem("anamnesi-farmaci", JSON.stringify(data.farmaci)); }
+      if (data.integratori) { setIntegratori(data.integratori); localStorage.setItem("anamnesi-integratori", JSON.stringify(data.integratori)); }
+      localStorage.setItem("anamnesi-backup-full", JSON.stringify(data));
+      setGhSyncMsg("Dati sincronizzati dal GitHub");
       var now = new Date().toLocaleString("it-IT", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
       setGhLastSync(now);
       localStorage.setItem("anamnesi-github-lastsync", now);
       setGhSyncStatus("ok");
     }).catch(function (err) {
       setGhSyncStatus("error");
-      setGhSyncMsg("Errore sync: " + err.message);
+      if (err.message.indexOf("TOKEN_INVALID") >= 0) {
+        setGhAuthError(true);
+        setGhSyncMsg("Token non valido o scaduto — aggiorna il token nelle impostazioni.");
+      } else {
+        setGhSyncMsg("Errore sync: " + err.message);
+      }
     });
   }, []);
 
@@ -571,6 +576,15 @@ export default function App() {
     var kg = formKg ? parseFloat(formKg) : null;
     var sleepH = formSleepHours ? parseFloat(formSleepHours) : null;
     var sleepQ = formSleepQuality || null;
+    var alcoolTypes = null;
+    if (formAlcoolGiorno) {
+      alcoolTypes = [];
+      if (formAlcoolVino) alcoolTypes.push({ type: "vino", qty: formAlcoolVinoQty || null });
+      if (formAlcoolSpumante) alcoolTypes.push({ type: "spumante", qty: formAlcoolSpumanteQty || null });
+      if (formAlcoolDistillato) alcoolTypes.push({ type: "distillato", qty: formAlcoolDistillatoQty || null });
+      if (formAlcoolFermentato) alcoolTypes.push({ type: "fermentato", qty: formAlcoolFermentatoQty || null });
+      if (alcoolTypes.length === 0) alcoolTypes = null;
+    }
     var entry = {
       date: formDate,
       bp: bp,
@@ -580,7 +594,11 @@ export default function App() {
       migraine: formMigraine,
       migraineTime: formMigraine ? (formTime || null) : null,
       migraineContext: formMigraine ? (formContext || null) : null,
-      alcohol: formMigraine ? (formAlcohol || null) : null,
+      migraineLato: formMigraine ? (formMigraineLato || null) : null,
+      migraineIntensita: formMigraine ? (formMigraineIntensita ? parseInt(formMigraineIntensita) : null) : null,
+      alcohol: formAlcoolGiorno ? "Sì" : "No",
+      alcoholDay: formAlcoolGiorno,
+      alcoholTypes: alcoolTypes,
       notes: formNotes || null
     };
     var newLog;
@@ -594,7 +612,9 @@ export default function App() {
     }
     autoBackup(newLog, null);
     setFormDate(""); setFormBpS(""); setFormBpD(""); setFormKg(""); setFormSleepHours(""); setFormSleepQuality("");
-    setFormMigraine(false); setFormTime(""); setFormContext(""); setFormAlcohol(""); setFormNotes("");
+    setFormMigraine(false); setFormTime(""); setFormContext(""); setFormMigraineLato(""); setFormMigraineIntensita("");
+    setFormAlcoolGiorno(false); setFormAlcoolVino(false); setFormAlcoolVinoQty(""); setFormAlcoolSpumante(false); setFormAlcoolSpumanteQty(""); setFormAlcoolDistillato(false); setFormAlcoolDistillatoQty(""); setFormAlcoolFermentato(false); setFormAlcoolFermentatoQty("");
+    setFormNotes("");
   }
 
   function handleEditDailyEntry(idx) {
@@ -607,7 +627,24 @@ export default function App() {
     setFormMigraine(!!entry.migraine);
     setFormTime(entry.migraineTime || "");
     setFormContext(entry.migraineContext || "");
-    setFormAlcohol(entry.alcohol || "");
+    setFormAlcoolGiorno(!!entry.alcoholDay);
+    if (entry.alcoholTypes && entry.alcoholTypes.length > 0) {
+      var v = entry.alcoholTypes.find(function(t) { return t.type === "vino"; });
+      var sp = entry.alcoholTypes.find(function(t) { return t.type === "spumante"; });
+      var di = entry.alcoholTypes.find(function(t) { return t.type === "distillato"; });
+      var fe = entry.alcoholTypes.find(function(t) { return t.type === "fermentato"; });
+      setFormAlcoolVino(!!v); setFormAlcoolVinoQty(v ? (v.qty || "") : "");
+      setFormAlcoolSpumante(!!sp); setFormAlcoolSpumanteQty(sp ? (sp.qty || "") : "");
+      setFormAlcoolDistillato(!!di); setFormAlcoolDistillatoQty(di ? (di.qty || "") : "");
+      setFormAlcoolFermentato(!!fe); setFormAlcoolFermentatoQty(fe ? (fe.qty || "") : "");
+    } else {
+      setFormAlcoolVino(false); setFormAlcoolVinoQty("");
+      setFormAlcoolSpumante(false); setFormAlcoolSpumanteQty("");
+      setFormAlcoolDistillato(false); setFormAlcoolDistillatoQty("");
+      setFormAlcoolFermentato(false); setFormAlcoolFermentatoQty("");
+    }
+    setFormMigraineLato(entry.migraineLato || "");
+    setFormMigraineIntensita(entry.migraineIntensita != null ? String(entry.migraineIntensita) : "");
     setFormNotes(entry.notes || "");
     setEditingIdx(idx);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -616,7 +653,9 @@ export default function App() {
   function handleCancelEdit() {
     setEditingIdx(null);
     setFormDate(""); setFormBpS(""); setFormBpD(""); setFormKg(""); setFormSleepHours(""); setFormSleepQuality("");
-    setFormMigraine(false); setFormTime(""); setFormContext(""); setFormAlcohol(""); setFormNotes("");
+    setFormMigraine(false); setFormTime(""); setFormContext(""); setFormMigraineLato(""); setFormMigraineIntensita("");
+    setFormAlcoolGiorno(false); setFormAlcoolVino(false); setFormAlcoolVinoQty(""); setFormAlcoolSpumante(false); setFormAlcoolSpumanteQty(""); setFormAlcoolDistillato(false); setFormAlcoolDistillatoQty(""); setFormAlcoolFermentato(false); setFormAlcoolFermentatoQty("");
+    setFormNotes("");
   }
 
   function handleDeleteDailyEntry(idx) {
@@ -849,8 +888,21 @@ export default function App() {
           <div style={{ marginTop: "6px", fontSize: "10px", color: col.mut }}>Storico (giu/24 — mag/25): 39 ep. solo data · Dettagliato (ago/25 — mar/26): 23 ep. con PA, orario, contesto</div>
         </div>
 
+        {/* Auth error banner - shown when GitHub token is invalid or expired */}
+        {ghAuthError && (
+          <div className="no-print" style={{ marginBottom: "14px", padding: "14px 18px", background: "#fde8e8", border: "1px solid " + col.acc + "60", borderRadius: "10px", borderLeft: "4px solid " + col.acc, display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: "200px" }}>
+              <div style={{ fontSize: "13px", fontWeight: "600", color: col.acc, marginBottom: "4px" }}>⚠ Token GitHub non valido o scaduto</div>
+              <div style={{ fontSize: "11px", color: col.txt, lineHeight: "1.5" }}>I dati non vengono sincronizzati. Vai alla sezione <strong>Registro → Sincronizzazione Cloud</strong> e inserisci il nuovo token GitHub per ripristinare la sincronizzazione.</div>
+            </div>
+            <button onClick={function () { setTab("registro"); setGhConfigOpen(true); }} style={{ padding: "8px 18px", fontSize: "12px", fontWeight: "600", color: "#fff", background: col.acc, border: "none", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+              Aggiorna token
+            </button>
+          </div>
+        )}
+
         {/* Restore banner - shown when localStorage is empty but backup might exist */}
-        {dailyLog.length === 0 && !analysisResult && (
+        {dailyLog.length === 0 && !analysisResult && !ghAuthError && (
           <div className="no-print" style={{ marginBottom: "14px", padding: "14px 18px", background: col.ambL, border: "1px solid " + col.amb + "40", borderRadius: "10px", borderLeft: "4px solid " + col.amb, display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: "200px" }}>
               <div style={{ fontSize: "13px", fontWeight: "600", color: col.amb, marginBottom: "4px" }}>Nessun dato nel diario</div>
@@ -1811,7 +1863,36 @@ export default function App() {
                   </label>
                 </div>
 
-                {/* Row 3: Migraine toggle */}
+                {/* Row 3: Alcol della giornata */}
+                <div style={{ display: "flex", alignItems: "flex-start", padding: "8px 12px", background: formAlcoolGiorno ? col.ambL : "#fafaf8", borderRadius: "8px", border: "1px solid " + (formAlcoolGiorno ? col.amb + "40" : col.bdr), transition: "all 0.2s", flexWrap: "wrap", gap: "10px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "600", color: formAlcoolGiorno ? col.amb : col.mut, cursor: "pointer", whiteSpace: "nowrap" }}>
+                    <input type="checkbox" checked={formAlcoolGiorno} onChange={function (e) { setFormAlcoolGiorno(e.target.checked); if (!e.target.checked) { setFormAlcoolVino(false); setFormAlcoolVinoQty(""); setFormAlcoolSpumante(false); setFormAlcoolSpumanteQty(""); setFormAlcoolDistillato(false); setFormAlcoolDistillatoQty(""); setFormAlcoolFermentato(false); setFormAlcoolFermentatoQty(""); } }} style={{ width: "15px", height: "15px", accentColor: col.amb }} />
+                    Alcol oggi
+                  </label>
+                  {formAlcoolGiorno && (
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      {[
+                        ["vino", "Vino", formAlcoolVino, setFormAlcoolVino, formAlcoolVinoQty, setFormAlcoolVinoQty],
+                        ["spumante", "Spumante/Champagne", formAlcoolSpumante, setFormAlcoolSpumante, formAlcoolSpumanteQty, setFormAlcoolSpumanteQty],
+                        ["distillato", "Distillato", formAlcoolDistillato, setFormAlcoolDistillato, formAlcoolDistillatoQty, setFormAlcoolDistillatoQty],
+                        ["fermentato", "Fermentato/Birra", formAlcoolFermentato, setFormAlcoolFermentato, formAlcoolFermentatoQty, setFormAlcoolFermentatoQty],
+                      ].map(function (item) {
+                        var key = item[0], label = item[1], checked = item[2], setChecked = item[3], qty = item[4], setQty = item[5];
+                        return (
+                          <div key={key} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                            <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: checked ? col.amb : col.mut, cursor: "pointer" }}>
+                              <input type="checkbox" checked={checked} onChange={function (e) { setChecked(e.target.checked); if (!e.target.checked) setQty(""); }} style={{ accentColor: col.amb }} />
+                              {label}
+                            </label>
+                            {checked && <input type="text" value={qty} onChange={function (e) { setQty(e.target.value); }} placeholder="es. 2 bicchieri" style={{ ...inputS, width: "90px", fontSize: "11px" }} />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Row 4: Migraine toggle */}
                 <div style={{ display: "flex", gap: "10px", alignItems: "center", padding: "8px 12px", background: formMigraine ? col.accL : "#fafaf8", borderRadius: "8px", border: "1px solid " + (formMigraine ? col.acc + "40" : col.bdr), transition: "all 0.2s" }}>
                   <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "600", color: formMigraine ? col.acc : col.mut, cursor: "pointer" }}>
                     <input type="checkbox" checked={formMigraine} onChange={function (e) { setFormMigraine(e.target.checked); }} style={{ width: "16px", height: "16px", accentColor: col.acc }} />
@@ -1819,7 +1900,7 @@ export default function App() {
                   </label>
                 </div>
 
-                {/* Row 4: Migraine details (shown only if migraine checked) */}
+                {/* Row 5: Migraine details (shown only if migraine checked) */}
                 {formMigraine && (
                   <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end", padding: "10px 12px", background: col.accL, borderRadius: "8px", borderLeft: "3px solid " + col.acc }}>
                     <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.acc }}>
@@ -1831,13 +1912,17 @@ export default function App() {
                       <input type="text" value={formContext} onChange={function (e) { setFormContext(e.target.value); }} placeholder="es. Lavorando, Al risveglio..." style={inputS} />
                     </label>
                     <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.acc }}>
-                      Alcol
-                      <select value={formAlcohol} onChange={function (e) { setFormAlcohol(e.target.value); }} style={{ ...inputS, minWidth: "100px" }}>
+                      Lato
+                      <select value={formMigraineLato} onChange={function (e) { setFormMigraineLato(e.target.value); }} style={{ ...inputS, minWidth: "95px" }}>
                         <option value="">—</option>
-                        <option value="No">No</option>
-                        <option value="No (dieta)">No (dieta)</option>
-                        <option value="Sì">Sì</option>
+                        <option value="sinistra">Sinistra</option>
+                        <option value="centrale">Centrale</option>
+                        <option value="destra">Destra</option>
                       </select>
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: col.acc }}>
+                      Intensità (1-10)
+                      <input type="number" value={formMigraineIntensita} onChange={function (e) { setFormMigraineIntensita(e.target.value); }} placeholder="—" min="1" max="10" style={{ ...inputS, width: "65px" }} />
                     </label>
                   </div>
                 )}
@@ -1880,7 +1965,7 @@ export default function App() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                   <thead>
                     <tr style={{ background: "#f2f1ee" }}>
-                      {["Data", "Gi.", "PA", "Peso", "Sonno", "Emicrania", "Note", ""].map(function (h) {
+                      {["Data", "Gi.", "PA", "Peso", "Sonno", "Emicrania", "Alcol", "Note", ""].map(function (h) {
                         return <th key={h} style={{ padding: "10px 8px", textAlign: "center", fontWeight: "600", color: col.mut, fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid " + col.bdr }}>{h}</th>;
                       })}
                     </tr>
@@ -1909,10 +1994,21 @@ export default function App() {
                           </td>
                           <td style={{ padding: "7px 6px", textAlign: "center" }}>
                             {entry.migraine ? (
-                              <span style={{ background: col.accL, color: col.acc, padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "600" }}>
-                                SI {entry.migraineTime ? entry.migraineTime : ""}
+                              <span style={{ background: col.accL, color: col.acc, padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "3px", flexWrap: "wrap", justifyContent: "center" }}>
+                                <span>SI{entry.migraineTime ? " " + entry.migraineTime : ""}</span>
+                                {entry.migraineLato && <span style={{ opacity: 0.85 }}>{entry.migraineLato === "sinistra" ? "←" : entry.migraineLato === "destra" ? "→" : "↔"}</span>}
+                                {entry.migraineIntensita != null && <span>{entry.migraineIntensita}/10</span>}
                               </span>
                             ) : <span style={{ color: col.mut }}>—</span>}
+                          </td>
+                          <td style={{ padding: "7px 6px", textAlign: "center", fontSize: "11px" }}>
+                            {entry.alcoholDay ? (
+                              <span style={{ color: col.amb, fontWeight: "600" }}>
+                                {entry.alcoholTypes && entry.alcoholTypes.length > 0
+                                  ? entry.alcoholTypes.map(function (t) { return t.qty ? t.type + " (" + t.qty + ")" : t.type; }).join(", ")
+                                  : "Sì"}
+                              </span>
+                            ) : (entry.alcohol === "Sì" ? <span style={{ color: col.amb, fontWeight: "600" }}>Sì</span> : <span style={{ color: col.mut }}>—</span>)}
                           </td>
                           <td style={{ padding: "7px 6px", fontSize: "11px", color: col.mut, textAlign: "left", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.notes || "—"}</td>
                           <td style={{ padding: "7px 6px", textAlign: "center", whiteSpace: "nowrap" }}>
@@ -1966,7 +2062,7 @@ export default function App() {
                   {ghLastSync && <p style={{ fontSize: "10px", color: col.mut, margin: "2px 0 0" }}>Ultimo sync: {ghLastSync}</p>}
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  {isConfigured() ? (
+                  {isConfigured() && !ghAuthError ? (
                     <>
                       <button type="button" onClick={function () {
                         setGhSyncStatus("syncing");
@@ -1989,12 +2085,17 @@ export default function App() {
                           setGhSyncMsg("Sincronizzato!");
                         }).catch(function (err) {
                           setGhSyncStatus("error");
-                          setGhSyncMsg("Errore: " + err.message);
+                          if (err.message.indexOf("TOKEN_INVALID") >= 0) {
+                            setGhAuthError(true);
+                            setGhSyncMsg("Token non valido o scaduto — aggiorna il token.");
+                          } else {
+                            setGhSyncMsg("Errore: " + err.message);
+                          }
                         });
                       }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.blu, background: col.bluL, border: "1px solid " + col.blu + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
                         Sincronizza ora
                       </button>
-                      <button type="button" onClick={function () { clearConfig(); setGhSyncStatus(""); setGhSyncMsg(""); setGhLastSync(""); localStorage.removeItem("anamnesi-github-lastsync"); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.acc, background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
+                      <button type="button" onClick={function () { clearConfig(); setGhSyncStatus(""); setGhSyncMsg(""); setGhLastSync(""); setGhAuthError(false); localStorage.removeItem("anamnesi-github-lastsync"); }} style={{ padding: "8px 16px", fontSize: "11px", fontWeight: "600", color: col.acc, background: col.accL, border: "1px solid " + col.acc + "40", borderRadius: "6px", cursor: "pointer", fontFamily: "inherit" }}>
                         Disconnetti
                       </button>
                     </>
@@ -2030,6 +2131,7 @@ export default function App() {
                         setGhSyncMsg("Testando connessione...");
                         fetchFromGitHub().then(function (result) {
                           if (result) ghShaRef.current = result.sha;
+                          setGhAuthError(false);
                           setGhSyncStatus("ok");
                           setGhSyncMsg("Connesso! I dati verranno sincronizzati automaticamente.");
                           /* Upload current data if GitHub is empty or older */

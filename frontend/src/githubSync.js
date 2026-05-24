@@ -55,6 +55,9 @@ async function fetchFromGitHub() {
   });
 
   if (res.status === 404) return null;
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("TOKEN_INVALID:" + res.status);
+  }
   if (!res.ok) {
     var errText = await res.text();
     throw new Error("GitHub GET failed (" + res.status + "): " + errText);
