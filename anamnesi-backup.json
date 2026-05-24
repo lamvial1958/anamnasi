@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-24T08:38:14.569Z",
+  "exportDate": "2026-05-24T08:38:19.873Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -878,7 +878,12 @@
       "migraineIntensita": null,
       "alcohol": "Sì",
       "alcoholDay": true,
-      "alcoholTypes": null,
+      "alcoholTypes": [
+        {
+          "type": "vino",
+          "qty": null
+        }
+      ],
       "notes": "Vino"
     },
     {
