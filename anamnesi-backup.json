@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-05-31T05:28:51.493Z",
+  "exportDate": "2026-06-06T14:36:54.009Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -1078,6 +1078,22 @@
       "alcoholDay": false,
       "alcoholTypes": null,
       "notes": null
+    },
+    {
+      "date": "2026-06-05",
+      "bp": null,
+      "kg": null,
+      "sleepHours": null,
+      "sleepQuality": null,
+      "migraine": true,
+      "migraineTime": "15:00",
+      "migraineContext": null,
+      "migraineLato": null,
+      "migraineIntensita": null,
+      "alcohol": "No",
+      "alcoholDay": false,
+      "alcoholTypes": null,
+      "notes": "In piscina"
     }
   ],
   "analysis": {
