@@ -58,16 +58,8 @@ const episodes = [
   { id: 54, date: "2026-01-16", wd: "Ven", time: "13:30", bp: "110/71", alcohol: "No (dieta)", context: "All'improvviso", src: "D" },
   { id: 55, date: "2026-01-17", wd: "Sab", time: "10:00", bp: "118/72", alcohol: "No (dieta)", context: "Al risveglio", src: "D" },
   { id: 56, date: "2026-01-26", wd: "Lun", time: "15:30", bp: "115/73", alcohol: "No (dieta)", context: "All'improvviso", src: "D" },
-  { id: 57, date: "2026-02-02", wd: "Lun", time: "14:00", bp: "108/66", alcohol: "No (dieta)", context: "", src: "D" },
-  { id: 58, date: "2026-02-11", wd: "Mer", time: "13:40", bp: "112/66", alcohol: "No (dieta)", context: "Computer-lavoro", src: "D" },
-  { id: 59, date: "2026-02-14", wd: "Sab", time: "14:00", bp: "112/69", alcohol: "No (dieta)", context: "", src: "D" },
-  { id: 60, date: "2026-02-21", wd: "Sab", time: "16:00", bp: "104/67", alcohol: "No (dieta)", context: "Aura lato sinistro", src: "D" },
-  { id: 61, date: "2026-02-28", wd: "Sab", time: "15:00", bp: "115/73", alcohol: "No (dieta)", context: "", src: "D" },
-  { id: 62, date: "2026-03-04", wd: "Mer", time: "11:00", bp: "111/71", alcohol: "No (dieta)", context: "", src: "D" },
-  { id: 63, date: "2026-03-14", wd: "Sab", time: "23:00", bp: null, alcohol: "No (dieta)", context: "", src: "D" },
 ];
 
-const N = 63;
 const DIET = "2026-01-05";
 const CANDESARTAN = "2025-09-20";
 
@@ -102,12 +94,6 @@ const defaultWeightData = [
   { date: "2026-01-19", kg: 130.0 },
   { date: "2026-01-22", kg: 130.0 },
   { date: "2026-01-25", kg: 124.6 },
-  { date: "2026-02-02", kg: 121.1 },
-  { date: "2026-02-08", kg: 118.65 },
-  { date: "2026-02-15", kg: 117.85 },
-  { date: "2026-02-22", kg: 117.05 },
-  { date: "2026-03-01", kg: 117.05 },
-  { date: "2026-03-08", kg: 115.05 },
 ];
 
 /* --- Sleep tracking data (Feature 4) --- */
@@ -917,7 +903,7 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px", flexWrap: "wrap", gap: "6px" }}>
-            <span style={{ fontSize: "12px", color: col.mut }}><strong>{N} episodi</strong> · {fmtD(episodes[0].date)} — {fmtD(episodes[N - 1].date)} ({dBetw(episodes[0].date, episodes[N - 1].date)}gg ≈ 21 mesi)</span>
+            <span style={{ fontSize: "12px", color: col.mut }}><strong>{allEpisodes.length} episodi</strong> · {fmtD(allEpisodes[0].date)} — {fmtD(allEpisodes[allEpisodes.length - 1].date)} ({dBetw(allEpisodes[0].date, allEpisodes[allEpisodes.length - 1].date)}gg)</span>
             <span style={{ fontSize: "10px", color: col.acc, fontWeight: 600, background: col.accL, padding: "3px 8px", borderRadius: "4px" }}>USO CLINICO</span>
           </div>
           <div style={{ marginTop: "6px", fontSize: "10px", color: col.mut }}>Storico (giu/24 — mag/25): 39 ep. solo data · Dettagliato (ago/25 — mar/26): 23 ep. con PA, orario, contesto</div>
@@ -955,7 +941,7 @@ export default function App() {
           <div style={{ background: col.acc, color: "#fff", padding: "18px 24px", borderRadius: "8px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h1 style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "22px", margin: "0 0 6px", fontWeight: 400, color: "#fff" }}>REGISTRO EMICRANIA CON AURA</h1>
-              <div style={{ fontSize: "12px", opacity: 0.9 }}>{N} episodi · {fmtD(episodes[0].date)} — {fmtD(episodes[N - 1].date)} ({dBetw(episodes[0].date, episodes[N - 1].date)}gg)</div>
+              <div style={{ fontSize: "12px", opacity: 0.9 }}>{allEpisodes.length} episodi · {fmtD(allEpisodes[0].date)} — {fmtD(allEpisodes[allEpisodes.length - 1].date)} ({dBetw(allEpisodes[0].date, allEpisodes[allEpisodes.length - 1].date)}gg)</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: "11px", fontWeight: "600" }}>USO CLINICO</div>
@@ -975,8 +961,8 @@ export default function App() {
 
         {/* STATS (always show totals from original data) */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
-          <Stat label="Totale" value={N} sub={dBetw(episodes[0].date, episodes[N - 1].date) + "gg"} color={col.acc} />
-          <Stat label="Media" value={(N / dBetw(episodes[0].date, episodes[N - 1].date) * 30).toFixed(1) + "/m"} sub="21 mesi" />
+          <Stat label="Totale" value={allEpisodes.length} sub={dBetw(allEpisodes[0].date, allEpisodes[allEpisodes.length - 1].date) + "gg"} color={col.acc} />
+          <Stat label="Media" value={(allEpisodes.length / dBetw(allEpisodes[0].date, allEpisodes[allEpisodes.length - 1].date) * 30).toFixed(1) + "/m"} sub={Math.round(dBetw(allEpisodes[0].date, allEpisodes[allEpisodes.length - 1].date) / 30) + " mesi"} />
           <Stat label="Sab" value={dayC["Sab"]} sub={epN > 0 ? Math.round(dayC["Sab"] / epN * 100) + "%" : "0%"} color={col.amb} />
           <Stat label="Lun" value={dayC["Lun"]} sub={epN > 0 ? Math.round(dayC["Lun"] / epN * 100) + "%" : "0%"} color={col.blu} />
           <Stat label="Pre-dieta" value={preRate + "/m"} sub={preDiet.length + "ep/" + preDietDays + "gg"} color={col.amb} />
@@ -2766,7 +2752,7 @@ export default function App() {
 
         {/* FOOTER */}
         <div className={sintesiClinica ? "no-print" : ""} style={{ marginTop: "22px", paddingTop: "10px", borderTop: "1px solid " + col.bdr, fontSize: "9px", color: col.mut, textAlign: "center" }}>
-          Generato: {new Date().toLocaleDateString("it-IT")} · {N} episodi ({fmtD(episodes[0].date).slice(3)} — {fmtD(episodes[N - 1].date).slice(3)}) · Interpretazione di competenza del medico specialista
+          Generato: {new Date().toLocaleDateString("it-IT")} · {allEpisodes.length} episodi ({fmtD(allEpisodes[0].date).slice(3)} — {fmtD(allEpisodes[allEpisodes.length - 1].date).slice(3)}) · Interpretazione di competenza del medico specialista
         </div>
       </div>
     </div>
