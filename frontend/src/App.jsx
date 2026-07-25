@@ -2225,15 +2225,27 @@ export default function App() {
                         setGhSyncStatus("syncing");
                         setGhSyncMsg("Testando connessione...");
                         fetchFromGitHub().then(function (result) {
-                          if (result) ghShaRef.current = result.sha;
                           setGhAuthError(false);
-                          setGhSyncStatus("ok");
-                          setGhSyncMsg("Connesso! I dati verranno sincronizzati automaticamente.");
-                          /* Upload current data if GitHub is empty or older */
-                          var currentBackup = localStorage.getItem("anamnesi-backup-full");
-                          if (currentBackup) {
-                            var data = JSON.parse(currentBackup);
-                            pushToGitHub(data);
+                          if (result && result.data) {
+                            /* GitHub already has data: it is authoritative, import it instead of overwriting */
+                            ghShaRef.current = result.sha;
+                            var data = result.data;
+                            if (data.dailyLog) { setDailyLog(data.dailyLog); localStorage.setItem("anamnesi-daily-log", JSON.stringify(data.dailyLog)); }
+                            if (data.analysis) { setAnalysisResult(data.analysis); localStorage.setItem("anamnesi-analysis", JSON.stringify(data.analysis)); }
+                            if (data.farmaciEstemporanei) { setPrnMeds(data.farmaciEstemporanei); localStorage.setItem("anamnesi-prn-meds", JSON.stringify(data.farmaciEstemporanei)); }
+                            if (data.farmaci) { setFarmaci(data.farmaci); localStorage.setItem("anamnesi-farmaci", JSON.stringify(data.farmaci)); }
+                            if (data.integratori) { setIntegratori(data.integratori); localStorage.setItem("anamnesi-integratori", JSON.stringify(data.integratori)); }
+                            localStorage.setItem("anamnesi-backup-full", JSON.stringify(data));
+                            setGhSyncStatus("ok");
+                            setGhSyncMsg("Connesso! Dati importati da GitHub.");
+                          } else {
+                            /* GitHub is empty: seed it with current local data */
+                            var currentBackup = localStorage.getItem("anamnesi-backup-full");
+                            if (currentBackup) {
+                              pushToGitHub(JSON.parse(currentBackup));
+                            }
+                            setGhSyncStatus("ok");
+                            setGhSyncMsg("Connesso! I dati verranno sincronizzati automaticamente.");
                           }
                           var now = new Date().toLocaleString("it-IT", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
                           setGhLastSync(now);
