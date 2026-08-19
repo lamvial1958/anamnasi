@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-08-19T07:35:47.834Z",
+  "exportDate": "2026-08-19T07:36:36.049Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -1483,6 +1483,12 @@
     ]
   },
   "farmaciEstemporanei": [
+    {
+      "name": "Maxalt",
+      "dose": "10 mg",
+      "date": "2026-08-19",
+      "reason": "emicrania"
+    },
     {
       "name": "Brufen",
       "dose": "600 mg",
