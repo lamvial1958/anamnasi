@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-08-19T07:36:36.049Z",
+  "exportDate": "2026-09-25T07:28:06.041Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -1386,6 +1386,22 @@
       "alcoholDay": false,
       "alcoholTypes": null,
       "notes": "Aura completa. Iniziata dal lato destro. In meno di un'ora il ciclo si è completato."
+    },
+    {
+      "date": "2026-09-25",
+      "bp": "108/57",
+      "kg": 114,
+      "sleepHours": 8.5,
+      "sleepQuality": "buona",
+      "migraine": true,
+      "migraineTime": "08:10",
+      "migraineContext": "Mentre facevo collazione",
+      "migraineLato": "destra",
+      "migraineIntensita": 4,
+      "alcohol": "No",
+      "alcoholDay": false,
+      "alcoholTypes": null,
+      "notes": null
     }
   ],
   "analysis": {
