@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-09-26T12:27:06.161Z",
+  "exportDate": "2026-09-26T12:28:27.744Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -1418,6 +1418,22 @@
       "alcoholDay": false,
       "alcoholTypes": null,
       "notes": "Aura completa"
+    },
+    {
+      "date": "2026-09-26",
+      "bp": null,
+      "kg": null,
+      "sleepHours": 8.5,
+      "sleepQuality": "buona",
+      "migraine": true,
+      "migraineTime": "13:05",
+      "migraineContext": null,
+      "migraineLato": "sinistra",
+      "migraineIntensita": 7,
+      "alcohol": "No",
+      "alcoholDay": false,
+      "alcoholTypes": null,
+      "notes": "Aura completa e molto forte"
     }
   ],
   "analysis": {
