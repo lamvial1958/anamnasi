@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-10-07T07:54:56.214Z",
+  "exportDate": "2026-10-15T15:31:19.031Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -1450,6 +1450,22 @@
       "alcoholDay": false,
       "alcoholTypes": null,
       "notes": "Aura deformata"
+    },
+    {
+      "date": "2026-10-12",
+      "bp": "119/119",
+      "kg": 69,
+      "sleepHours": 8,
+      "sleepQuality": "media",
+      "migraine": true,
+      "migraineTime": "20:32",
+      "migraineContext": "guardando la tv",
+      "migraineLato": "destra",
+      "migraineIntensita": 6,
+      "alcohol": "No",
+      "alcoholDay": false,
+      "alcoholTypes": null,
+      "notes": "Giornta tranquila"
     }
   ],
   "analysis": {
