@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import ReportPersonalizzato from "./ReportPersonalizzato";
 import { getConfig, saveConfig, clearConfig, isConfigured, fetchFromGitHub, saveToGitHub } from "./githubSync";
 
 const episodes = [
@@ -266,6 +267,9 @@ export default function App() {
       bp: bp,
       alcohol: entry.alcoholDay ? "Sì" : (entry.alcohol || null),
       context: entry.migraineContext || null,
+      lato: entry.migraineLato || null,
+      intensita: entry.migraineIntensita != null ? entry.migraineIntensita : null,
+      notes: entry.notes || null,
       src: "D"
     };
   });
@@ -549,8 +553,9 @@ export default function App() {
   const tabs = [
     ["timeline", "1. Timeline"], ["frequenza", "2. Frequenza"], ["heatmap", "3. Giorni"],
     ["pressione", "4. PA/Dieta"], ["orario", "5. Orario/Aura"], ["sintesi", "6. Sintesi Clinica"], ["farmaci", "7. Farmaci"],
-    ["peso_sonno", "8. Peso/Sonno"], ["registro", "9. Registro"]
+    ["peso_sonno", "8. Peso/Sonno"], ["registro", "9. Registro"], ["report", "10. Report"]
   ];
+  var reportView = tab === "report" && !printMode && !sintesiClinica;
 
   const workEps = detailed.filter(function (e) { return e.context && (e.context.toLowerCase().indexOf("lavor") >= 0 || e.context.toLowerCase().indexOf("computer") >= 0); });
 
@@ -889,7 +894,7 @@ export default function App() {
       <div style={{ maxWidth: "960px", margin: "0 auto" }}>
 
         {/* HEADER */}
-        <div className={printMode ? "no-print" : (sintesiClinica ? "sintesi-hide-on-print" : "")} style={{ marginBottom: "22px", borderBottom: "2px solid " + col.acc, paddingBottom: "12px" }}>
+        <div className={printMode || reportView ? "no-print" : (sintesiClinica ? "sintesi-hide-on-print" : "")} style={{ marginBottom: "22px", borderBottom: "2px solid " + col.acc, paddingBottom: "12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
             <h1 style={{ fontFamily: "'DM Serif Display',Georgia,serif", fontSize: "24px", color: col.txt, margin: 0, fontWeight: 400 }}>Analisi Completa — Emicrania con Aura</h1>
             {/* Feature 2: PDF Export button */}
@@ -957,7 +962,9 @@ export default function App() {
         </div>
 
         {/* Main dashboard content — hidden when printing sintesi clinica */}
-        <div className={sintesiClinica ? "sintesi-hide-on-print" : ""}>
+        {reportView && <ReportPersonalizzato episodes={allEpisodes} col={col} cardS={cardS} inputS={inputS} fmtD={fmtD} />}
+
+        <div className={sintesiClinica ? "sintesi-hide-on-print" : ""} style={reportView ? { display: "none" } : undefined}>
 
         {/* STATS (always show totals from original data) */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
