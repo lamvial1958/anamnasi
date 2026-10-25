@@ -7,7 +7,7 @@
 - **Merge e push**: concluídos em 11/03/2026
 
 ## Funcionalidades Implementadas
-- [x] 8 abas: timeline, frequenza, heatmap, pressione, orario, sintesi, farmaci, registro
+- [x] 10 abas: timeline, frequenza, heatmap, pressione, orario, sintesi, farmaci, peso/sonno, registro, report
 - [x] 62 episódios de enxaqueca documentados
 - [x] Gráfico SVG de pressão arterial com timeline
 - [x] Correlação pressão x Candesartan (20/09/2025) e Dieta (05/01/2026)
@@ -67,3 +67,11 @@
 - Projeto Vite para desenvolvimento local
 - Dados em localStorage + sync automático com GitHub (backup cloud)
 - `frontend/src/githubSync.js` — módulo de sincronização via GitHub Contents API
+
+### ~~7. Report personalizzato~~ ✅ (concluído 25/10/2026)
+- [x] Aba "10. Report" (`frontend/src/ReportPersonalizzato.jsx`)
+- [x] Periodo a scelta (date Da/A + scorciatoie 30gg, 3/6 mesi, 1 anno, tutto)
+- [x] Grafico SVG episodi per giorno, settimana o mese (periodi senza episodi = 0)
+- [x] Registro eventi in ordine decrescente (più recenti prima), colonne selezionabili: giorno, ora, lato, intensità, PA, alcol, contesto, note
+- [x] Titolo modificabile; "Stampa / Salva PDF" stampa solo il report
+- [x] Solo conteggi e dati registrati, nessuna inferenza
