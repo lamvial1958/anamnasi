@@ -232,10 +232,10 @@ export default function ReportPersonalizzato({ episodes, col, cardS, inputS, fmt
                     </tr>
                   </thead>
                   <tbody>
-                    {list.map(function (e, i) {
+                    {list.slice().reverse().map(function (e, i) {
                       return (
                         <tr key={e.date + "-" + i} style={{ breakInside: "avoid" }}>
-                          <td style={{ ...tdS, color: col.mut }}>{i + 1}</td>
+                          <td style={{ ...tdS, color: col.mut }}>{list.length - i}</td>
                           <td style={{ ...tdS, fontWeight: 600, whiteSpace: "nowrap" }}>{fmtD(e.date)}</td>
                           {activeCols.map(function (c) { return <td key={c[0]} style={tdS}>{colVal(e, c[0])}</td>; })}
                         </tr>
