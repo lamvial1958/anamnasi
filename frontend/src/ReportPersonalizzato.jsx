@@ -51,6 +51,7 @@ export default function ReportPersonalizzato({ episodes, col, cardS, inputS, fmt
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [gran, setGran] = useState("month");
+  const [chartType, setChartType] = useState("bars");
   const [title, setTitle] = useState("Report episodi di emicrania");
   const [showChart, setShowChart] = useState(true);
   const [showTable, setShowTable] = useState(true);
@@ -96,6 +97,23 @@ export default function ReportPersonalizzato({ episodes, col, cardS, inputS, fmt
 
   var granName = { day: "giorno", week: "settimana", month: "mese" }[gran];
 
+  /* mesi del periodo + conteggio per giorno (linea del tempo e calendario) */
+  var byDate = {};
+  list.forEach(function (e) { byDate[e.date] = (byDate[e.date] || 0) + 1; });
+  var months = [];
+  if (rFrom && rTo && rFrom <= rTo) {
+    var mc = rFrom.slice(0, 7) + "-01";
+    while (mc <= rTo && months.length < 600) { months.push(mc.slice(0, 7)); mc = nextBucket(mc, "month"); }
+  }
+  function daysIn(ym) { return new Date(parseInt(ym.slice(0, 4)), parseInt(ym.slice(5, 7)), 0).getDate(); }
+  function monthName(ym) { return MONTHS[parseInt(ym.slice(5, 7)) - 1] + " " + ym.slice(0, 4); }
+
+  var chartTitle = chartType === "timeline" ? "Linea del tempo degli episodi" : chartType === "calendar" ? "Calendario degli episodi" : "Episodi per " + granName;
+
+  var tlLabelW = 64, tlRowH = 22, tlTop = 22;
+  var tlH = tlTop + months.length * tlRowH + 6;
+  var tlX = function (day) { return tlLabelW + ((day - 0.5) / 31) * (W - tlLabelW - 14); };
+
   function colVal(e, key) {
     if (key === "lato") return e.lato ? e.lato.charAt(0).toUpperCase() + e.lato.slice(1) : "—";
     if (key === "intensita") return e.intensita != null ? e.intensita + "/10" : "—";
@@ -137,11 +155,20 @@ export default function ReportPersonalizzato({ episodes, col, cardS, inputS, fmt
           </div>
 
           <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "11px", fontWeight: "600", minWidth: "70px" }}>Grafico per:</span>
-            <button onClick={function () { setGran("day"); }} style={chipS(gran === "day")}>Giorno</button>
-            <button onClick={function () { setGran("week"); }} style={chipS(gran === "week")}>Settimana</button>
-            <button onClick={function () { setGran("month"); }} style={chipS(gran === "month")}>Mese</button>
+            <span style={{ fontSize: "11px", fontWeight: "600", minWidth: "70px" }}>Grafico:</span>
+            <button onClick={function () { setChartType("bars"); }} style={chipS(chartType === "bars")}>Barre</button>
+            <button onClick={function () { setChartType("timeline"); }} style={chipS(chartType === "timeline")}>Linea del tempo</button>
+            <button onClick={function () { setChartType("calendar"); }} style={chipS(chartType === "calendar")}>Calendario</button>
           </div>
+
+          {chartType === "bars" && (
+            <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "11px", fontWeight: "600", minWidth: "70px" }}>Barre per:</span>
+              <button onClick={function () { setGran("day"); }} style={chipS(gran === "day")}>Giorno</button>
+              <button onClick={function () { setGran("week"); }} style={chipS(gran === "week")}>Settimana</button>
+              <button onClick={function () { setGran("month"); }} style={chipS(gran === "month")}>Mese</button>
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: "11px", fontWeight: "600", minWidth: "70px" }}>Titolo:</span>
@@ -184,9 +211,78 @@ export default function ReportPersonalizzato({ episodes, col, cardS, inputS, fmt
 
         {showChart && (
           <div className="print-section" style={{ marginBottom: "22px" }}>
-            <div style={{ fontSize: "12px", fontWeight: "600", marginBottom: "6px" }}>Episodi per {granName}</div>
+            <div style={{ fontSize: "12px", fontWeight: "600", marginBottom: "6px" }}>{chartTitle}</div>
             {buckets.length === 0 ? (
               <div style={{ fontSize: "12px", color: col.mut }}>Periodo non valido.</div>
+            ) : chartType === "timeline" ? (
+              <div>
+                <svg viewBox={"0 0 " + W + " " + tlH} style={{ width: "100%", height: "auto", display: "block" }}>
+                  {[1, 5, 10, 15, 20, 25, 30].map(function (d) {
+                    return (
+                      <g key={"d" + d}>
+                        <text x={tlX(d)} y={12} textAnchor="middle" fontSize="10" fill={col.mut}>{d}</text>
+                        <line x1={tlX(d)} x2={tlX(d)} y1={tlTop - 4} y2={tlH - 4} stroke={col.bdr} strokeWidth="1" strokeDasharray="2 3" />
+                      </g>
+                    );
+                  })}
+                  {months.map(function (ym, r) {
+                    var cy = tlTop + r * tlRowH + tlRowH / 2;
+                    var n = daysIn(ym);
+                    var dots = [];
+                    for (var d = 1; d <= n; d++) {
+                      var iso = ym + "-" + pad(d);
+                      if (byDate[iso]) dots.push({ d: d, iso: iso, c: byDate[iso] });
+                    }
+                    return (
+                      <g key={ym}>
+                        <text x={tlLabelW - 8} y={cy + 3} textAnchor="end" fontSize="10" fill={col.mut}>{MONTHS[parseInt(ym.slice(5, 7)) - 1] + " " + ym.slice(2, 4)}</text>
+                        <line x1={tlX(1)} x2={tlX(n)} y1={cy} y2={cy} stroke={col.bdr} strokeWidth="1" />
+                        {dots.map(function (p) {
+                          return (
+                            <g key={p.iso}>
+                              <circle cx={tlX(p.d)} cy={cy} r="6" fill={col.acc}><title>{fmtD(p.iso) + (p.c > 1 ? " (" + p.c + ")" : "")}</title></circle>
+                              {p.c > 1 && <text x={tlX(p.d)} y={cy + 3} textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff">{p.c}</text>}
+                            </g>
+                          );
+                        })}
+                      </g>
+                    );
+                  })}
+                </svg>
+                <div style={{ fontSize: "10px", color: col.mut, marginTop: "4px" }}>Una riga per mese, asse = giorno del mese. Ogni punto = un giorno con episodio.</div>
+              </div>
+            ) : chartType === "calendar" ? (
+              <div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "14px" }}>
+                  {months.map(function (ym) {
+                    var n = daysIn(ym);
+                    var offset = (fromIso(ym + "-01").getDay() + 6) % 7;
+                    var cells = [];
+                    for (var i = 0; i < offset; i++) cells.push(null);
+                    for (var d = 1; d <= n; d++) cells.push(d);
+                    return (
+                      <div key={ym} className="print-section" style={{ width: "154px" }}>
+                        <div style={{ fontSize: "11px", fontWeight: "600", marginBottom: "4px" }}>{monthName(ym)}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 20px)", gap: "1px" }}>
+                          {["L", "M", "M", "G", "V", "S", "D"].map(function (w, i) {
+                            return <div key={"w" + i} style={{ fontSize: "8px", color: col.mut, textAlign: "center" }}>{w}</div>;
+                          })}
+                          {cells.map(function (d, i) {
+                            if (d === null) return <div key={"e" + i} />;
+                            var iso = ym + "-" + pad(d);
+                            var inRange = iso >= rFrom && iso <= rTo;
+                            var c = byDate[iso] || 0;
+                            return (
+                              <div key={iso} title={c ? fmtD(iso) + (c > 1 ? " (" + c + ")" : "") : ""} style={{ width: "20px", height: "20px", lineHeight: "20px", textAlign: "center", fontSize: "9px", borderRadius: "3px", fontWeight: c ? 700 : 400, color: c ? "#fff" : inRange ? col.mut : "#ccc", background: c ? col.acc : inRange ? "#f1efeb" : "transparent" }}>{d}</div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: "10px", color: col.mut, marginTop: "8px" }}>Giorni colorati = giorni con episodio. Giorni fuori dal periodo in grigio chiaro.</div>
+              </div>
             ) : (
               <svg viewBox={"0 0 " + W + " " + H} style={{ width: "100%", height: "auto", display: "block" }}>
                 {yTicks.map(function (v) {
@@ -212,7 +308,7 @@ export default function ReportPersonalizzato({ episodes, col, cardS, inputS, fmt
                 <line x1={padL} x2={W - padR} y1={padT + innerH} y2={padT + innerH} stroke={col.mut} strokeWidth="1" />
               </svg>
             )}
-            {gran === "week" && <div style={{ fontSize: "10px", color: col.mut, marginTop: "4px" }}>Ogni barra = settimana che inizia nella data indicata (lunedì).</div>}
+            {chartType === "bars" && gran === "week" && <div style={{ fontSize: "10px", color: col.mut, marginTop: "4px" }}>Ogni barra = settimana che inizia nella data indicata (lunedì).</div>}
           </div>
         )}
 

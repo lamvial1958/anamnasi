@@ -71,7 +71,7 @@
 ### ~~7. Report personalizzato~~ ✅ (concluído 25/10/2026)
 - [x] Aba "10. Report" (`frontend/src/ReportPersonalizzato.jsx`)
 - [x] Periodo a scelta (date Da/A + scorciatoie 30gg, 3/6 mesi, 1 anno, tutto)
-- [x] Grafico SVG episodi per giorno, settimana o mese (periodi senza episodi = 0)
+- [x] Seletore di grafico: Barre (episodi per giorno/settimana/mese, periodi vuoti = 0), Linea del tempo (una riga per mese, un punto per giorno con episodio) e Calendario (griglia mensile con i giorni con episodio evidenziati)
 - [x] Registro eventi in ordine decrescente (più recenti prima), colonne selezionabili: giorno, ora, lato, intensità, PA, alcol, contesto, note
 - [x] Titolo modificabile; "Stampa / Salva PDF" stampa solo il report
 - [x] Solo conteggi e dati registrati, nessuna inferenza
