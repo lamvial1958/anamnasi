@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-10-15T15:31:39.206Z",
+  "exportDate": "2026-10-25T12:59:22.142Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -1466,6 +1466,22 @@
       "alcoholDay": false,
       "alcoholTypes": null,
       "notes": "Giornata tranquila. Aura completa"
+    },
+    {
+      "date": "2026-10-25",
+      "bp": "116/71",
+      "kg": 113,
+      "sleepHours": 8.5,
+      "sleepQuality": "buona",
+      "migraine": true,
+      "migraineTime": "09:30",
+      "migraineContext": "Mentre facevo colazione",
+      "migraineLato": "sinistra",
+      "migraineIntensita": 6,
+      "alcohol": "No",
+      "alcoholDay": false,
+      "alcoholTypes": null,
+      "notes": "Aura del latto sinistro, come se fosse una C"
     }
   ],
   "analysis": {
