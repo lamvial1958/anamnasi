@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportDate": "2026-10-29T10:45:25.653Z",
+  "exportDate": "2026-11-15T16:04:50.508Z",
   "dailyLog": [
     {
       "date": "2026-03-05",
@@ -1494,6 +1494,22 @@
       "migraineContext": "Nella doccia",
       "migraineLato": "sinistra",
       "migraineIntensita": 3,
+      "alcohol": "No",
+      "alcoholDay": false,
+      "alcoholTypes": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "bp": "126/68",
+      "kg": 113,
+      "sleepHours": 8.5,
+      "sleepQuality": "buona",
+      "migraine": true,
+      "migraineTime": "14:00",
+      "migraineContext": null,
+      "migraineLato": "destra",
+      "migraineIntensita": 7,
       "alcohol": "No",
       "alcoholDay": false,
       "alcoholTypes": null,
