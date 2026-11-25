@@ -877,7 +877,7 @@
     {
       "date": "2026-05-17",
       "bp": null,
-      "kg": 64,
+      "kg": null,
       "sleepHours": 8,
       "sleepQuality": "media",
       "migraine": true,
@@ -1453,8 +1453,8 @@
     },
     {
       "date": "2026-10-12",
-      "bp": "119/119",
-      "kg": 69,
+      "bp": null,
+      "kg": null,
       "sleepHours": 8,
       "sleepQuality": "media",
       "migraine": true,
